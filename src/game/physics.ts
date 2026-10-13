@@ -29,6 +29,7 @@ import {
 } from "./track";
 import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
 import { k, doubleTap, keys } from "./input";
+import { TrickTracker } from "./tricks";
 import { QUESTS, SPLITS, loadSplitPB, questProgress, questsNewRun, saveSplitPB } from "./quests";
 import { audio, type CrashKind } from "./audio";
 
@@ -145,7 +146,9 @@ export function resetRun() {
   P.bestCombo = 1;
 }
 
+const tricks = new TrickTracker();
 function resetAir() {
+  tricks.reset();
   P.tYaw = 0;
   P.tPitch = 0;
   P.tRoll = 0;
@@ -297,21 +300,11 @@ function land(gy: number, stats: ReturnType<typeof currentStats>) {
     return;
   }
   if (air > 0.25) audio.land(Math.min(1, impactV / 25));
-  const parts: string[] = [];
-  let base = 0;
-  if (flips) {
-    parts.push((flips > 1 ? `${flips}x ` : "") + (P.tPitch < 0 ? "BACKFLIP" : "FRONTFLIP"));
-    if (P.tPitch < 0) { runBackflips += flips; questDone(questProgress("backflips", runBackflips)); }
-    base += flips * 18;
-  }
-  if (spins) {
-    parts.push(`${spins * 360}`);
-    base += spins * 12;
-  }
-  if (rolls) {
-    parts.push((rolls > 1 ? `${rolls}x ` : "") + "BARREL ROLL");
-    base += rolls * 14;
-  }
+  void spins; void flips; void rolls;
+  const ev = tricks.evaluate();
+  const parts: string[] = [...ev.parts];
+  let base = ev.pts;
+  if (ev.counts.backflips) { runBackflips += ev.counts.backflips; questDone(questProgress("backflips", runBackflips)); }
   if (air > 1.1) {
     parts.push(air > 2 ? "HUGE AIR" : "BIG AIR");
     base += Math.floor(air * 4);
@@ -556,8 +549,10 @@ function stepPhysics(rawDt: number) {
     P.speed *= Math.exp(-0.05 * dt);
     if (P.boosting) P.speed += 10 * dt;
     if (controls) {
+      const p0 = P.tPitch, r0 = P.tRoll, y0 = P.tYaw;
       // a little air steering so you can line up landings
       P.yaw += st * stats.handling * 0.35 * dt;
+      // Double-tap starts a full rotation; tapping again mid-trick switches into the new one.
       if (doubleTap("up")) { autoFlip = TAU; audio.play("trick"); }
       if (doubleTap("down")) { autoFlip = -TAU; audio.play("trick"); }
       if (autoFlip !== 0) {
@@ -565,14 +560,18 @@ function stepPhysics(rawDt: number) {
         P.tPitch += stepA; autoFlip -= stepA;
         if (Math.abs(autoFlip) < 1e-4) autoFlip = 0;
       }
-      // Double-press A/D for a barrel roll in that direction; holding W/S does nothing in the air.
-      if (doubleTap("left")) { autoRoll -= TAU; audio.play("trick"); }
-      if (doubleTap("right")) { autoRoll += TAU; audio.play("trick"); }
+      if (doubleTap("left")) { autoRoll = -TAU; audio.play("trick"); }
+      if (doubleTap("right")) { autoRoll = TAU; audio.play("trick"); }
       if (autoRoll !== 0) {
         const stepR = Math.min(Math.abs(autoRoll), (TAU / 0.7) * dt) * Math.sign(autoRoll);
         P.tRoll += stepR; autoRoll -= stepR;
         if (Math.abs(autoRoll) < 1e-4) autoRoll = 0;
       }
+      // Hold Q/E to spin, Z/C to barrel roll manually.
+      const spinIn = (k.spinL() ? 1 : 0) - (k.spinR() ? 1 : 0);
+      const rollIn = (k.rollR() ? 1 : 0) - (k.rollL() ? 1 : 0);
+      P.tYaw += spinIn * stats.air * dt;
+      if (rollIn) { autoRoll = 0; P.tRoll += rollIn * stats.air * 0.9 * dt; }
       // Release trick keys to ease toward the nearest full rotation; F levels faster.
       // Full turns are preserved so landing assistance does not erase trick rewards.
       const assist = k.level();
@@ -581,16 +580,20 @@ function stepPhysics(rawDt: number) {
         const angle = P.takeoffPitch + P.tPitch;
         P.tPitch += (Math.round(angle / TAU) * TAU - angle) * ease;
       }
-      if (autoRoll === 0) {
+      if (autoRoll === 0 && !rollIn) {
         const angle = P.roll + P.tRoll;
         P.tRoll += (Math.round(angle / TAU) * TAU - angle) * ease;
       }
-      P.tYaw += (Math.round(P.tYaw / TAU) * TAU - P.tYaw) * ease;
+      if (!spinIn) P.tYaw += (Math.round(P.tYaw / TAU) * TAU - P.tYaw) * ease;
       if (assist) {
         P.speed *= Math.exp(-0.65 * dt);
         P.lateral *= Math.exp(-5 * dt);
       }
+      tricks.feed("pitch", P.tPitch - p0);
+      tricks.feed("roll", P.tRoll - r0);
+      tricks.feed("yaw", P.tYaw - y0);
     }
+    tricks.tick(dt);
     P.airT += dt;
   }
 

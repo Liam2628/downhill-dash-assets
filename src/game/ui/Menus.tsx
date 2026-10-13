@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Lock, X } from "lucide-react";
 import { useGame, useSave } from "../store";
-import { CARS, GLOWS, GLOW_UNLOCK, PAINTS, TRAIL_UNLOCK, UPGRADES, carById, type CarStats } from "../data";
+import { CARS, EQUIPMENT, GLOWS, GLOW_UNLOCK, PAINTS, TRAIL_UNLOCK, UPGRADES, carById, type CarStats } from "../data";
 import { audio } from "../audio";
 import { exitMenu } from "../physics";
 import { WheelIcon } from "./WheelIcon";
@@ -279,6 +279,48 @@ function Tuning() {
                   <div key={i} className={`h-2 flex-1 rounded-full ${i < lvl ? "bg-hot" : "bg-panel-foreground/15"}`} />
                 ))}
               </div>
+            </div>
+          );
+        })}
+      </div>
+      <h3 className="mb-2 mt-6 font-display text-xl text-gold">PARTS SHOP</h3>
+      <div className="space-y-3">
+        {EQUIPMENT.map((e) => {
+          const has = s.equipmentOwned.includes(e.id);
+          const on = e.id === "wing" ? s.wing : s.rims === e.id;
+          return (
+            <div key={e.id} className="flex items-center justify-between rounded-xl bg-panel-foreground/5 p-3">
+              <div>
+                <div className="font-display">{e.name}</div>
+                <div className="text-xs opacity-70">{e.desc}</div>
+              </div>
+              {has ? (
+                <button
+                  className={`btn-game shrink-0 !px-3 !py-1.5 text-sm ${on ? "btn-cool" : "btn-ghost"}`}
+                  onClick={() => {
+                    audio.play("ui");
+                    if (e.id === "wing") s.setWing(!s.wing);
+                    else s.setRims(on ? null : e.id);
+                  }}
+                >
+                  {on ? "EQUIPPED" : "EQUIP"}
+                </button>
+              ) : (
+                <button
+                  className="btn-game btn-gold shrink-0 !px-3 !py-1.5 text-sm"
+                  disabled={s.wheels < e.price}
+                  onClick={() => {
+                    if (s.buyEquipment(e.id)) {
+                      audio.play("buy");
+                      if (e.id === "wing") s.setWing(true);
+                      else s.setRims(e.id);
+                      useGame.getState().popup(e.name.toUpperCase(), "gold");
+                    }
+                  }}
+                >
+                  <Price n={e.price} />
+                </button>
+              )}
             </div>
           );
         })}
