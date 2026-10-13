@@ -45,3 +45,4 @@
 - [x] Cones as one object, no ground sinking/line
 - [x] Hills shrink gradually near lobby (not too early)
 - [x] Finish Phase 3 Session 3 (long-run verification)
+- [x] Settings option to hide all UI during runs

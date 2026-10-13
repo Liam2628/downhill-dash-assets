@@ -414,6 +414,8 @@ export function HUD() {
   const mode = useGame((s) => s.mode);
   const settingsOpen = useGame((s) => s.settingsOpen);
   const chestOpen = useGame((s) => s.chestOpen);
+  const hideUi = useSave((s) => !!s.settings.hideUi);
+  if (hideUi && !settingsOpen && (mode === "hub" || mode === "run")) return null;
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-panel-foreground">
       <SpeedLines />
