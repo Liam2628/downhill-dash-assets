@@ -309,12 +309,15 @@ function land(gy: number, stats: ReturnType<typeof currentStats>) {
     parts.push(air > 2 ? "HUGE AIR" : "BIG AIR");
     base += Math.floor(air * 4);
   }
+  // XP: one grant per landing, from trick complexity only (air time excluded), separate from wheels.
+  const xp = ev.pts > 0 ? Math.round(ev.pts * (1 + (P.combo - 1) * 0.5)) : 0;
+  if (xp) useSave.getState().addXp(xp);
   if (base > 0) {
     const reward = Math.round(base * P.combo * stats.trickReward);
     award(reward);
     P.runTricks += 1;
     const comboTxt = P.combo > 1 ? ` x${P.combo.toFixed(1)}` : "";
-    useGame.getState().popup(parts.join(" + "), "hot", `+${reward} wheels${comboTxt}`);
+    useGame.getState().popup(parts.join(" + "), "hot", `+${reward} wheels${xp ? ` · +${xp} XP` : ""}${comboTxt}`);
     P.combo = Math.min(5, P.combo + 0.5);
     P.bestCombo = Math.max(P.bestCombo, P.combo);
     questDone(questProgress("combo", P.combo));
@@ -885,9 +888,9 @@ function stepLoop(dt: number) {
     P.yaw = Math.PI + loop.heading;
     P.grounded = true; P.vy = 0; P.lastS = lp.s + 0.6;
     const reward = Math.round(25 * P.combo);
-    award(reward); P.runTricks += 1;
+    award(reward); P.runTricks += 1; useSave.getState().addXp(20);
     P.combo = Math.min(5, P.combo + 0.5); P.bestCombo = Math.max(P.bestCombo, P.combo); P.comboT = 5;
-    audio.play("loop"); useGame.getState().popup("LOOP DE LOOP!", "cool", `+${reward} wheels`);
+    audio.play("loop"); useGame.getState().popup("LOOP DE LOOP!", "cool", `+${reward} wheels · +20 XP`);
   }
 }
 

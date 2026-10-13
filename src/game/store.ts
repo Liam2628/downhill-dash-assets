@@ -65,6 +65,7 @@ const clampInt = (n: unknown, min: number, max: number, fallback: number) =>
 function sanitizeSave(p: Partial<Save>): Partial<Save> {
   const out: Partial<Save> = { ...p };
   out.wheels = clampInt(p.wheels, 0, Number.MAX_SAFE_INTEGER, 0);
+  out.xp = clampInt(p.xp, 0, Number.MAX_SAFE_INTEGER, 0);
   out.owned = Array.isArray(p.owned) ? p.owned.filter((id) => CAR_IDS.has(id)) : initial.owned;
   if (out.owned.length === 0) out.owned = initial.owned;
   out.selected = typeof p.selected === "string" && out.owned.includes(p.selected) ? p.selected : out.owned[0];
@@ -114,6 +115,7 @@ export const DEFAULT_KEYS: KeyBinds = {
 
 type Save = {
   wheels: number;
+  xp: number;
   owned: string[];
   selected: string;
   paints: Record<string, string | null>;
@@ -138,6 +140,7 @@ export type Cheats = { unlimitedBoost: boolean; moonGravity: boolean; superSpeed
 
 type SaveActions = {
   addWheels: (n: number) => void;
+  addXp: (n: number) => void;
   spend: (n: number) => boolean;
   buyCar: (id: string, price: number) => boolean;
   selectCar: (id: string) => void;
@@ -162,6 +165,7 @@ type SaveActions = {
 
 const initial: Save = {
   wheels: 0,
+  xp: 0,
   owned: ["sedan"],
   selected: "sedan",
   paints: {},
@@ -199,6 +203,7 @@ export const useSave = create<Save & SaveActions>()(
     (set, get) => ({
       ...initial,
       addWheels: (n) => set({ wheels: get().wheels + n }),
+      addXp: (n) => set({ xp: get().xp + Math.max(0, Math.round(n)) }),
       spend: (n) => {
         if (get().wheels < n) return false;
         set({ wheels: get().wheels - n });
