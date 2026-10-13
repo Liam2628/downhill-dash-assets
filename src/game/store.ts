@@ -87,6 +87,7 @@ export type Settings = {
   camDist: number;
   units: "kmh" | "mph";
   showFps: boolean;
+  hideUi?: boolean;
   speedLines: boolean;
   hideControls: boolean;
   keys: KeyBinds;
@@ -167,6 +168,7 @@ const initial: Save = {
     camDist: 1,
     units: "kmh",
     showFps: false,
+    hideUi: false,
     speedLines: true,
     hideControls: false,
     keys: DEFAULT_KEYS,

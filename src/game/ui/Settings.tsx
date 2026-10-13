@@ -186,6 +186,9 @@ export function SettingsModal() {
           <Row label="Speed lines">
             <Seg value={s.speedLines ? "on" : "off"} options={[{ v: "on", label: "ON" }, { v: "off", label: "OFF" }]} onChange={(v) => set({ speedLines: v === "on" })} />
           </Row>
+          <Row label="Hide all UI on the road">
+            <Seg value={s.hideUi ? "on" : "off"} options={[{ v: "on", label: "ON" }, { v: "off", label: "OFF" }]} onChange={(v) => set({ hideUi: v === "on" })} />
+          </Row>
           <Row label="Show FPS">
             <Seg value={s.showFps ? "on" : "off"} options={[{ v: "on", label: "ON" }, { v: "off", label: "OFF" }]} onChange={(v) => set({ showFps: v === "on" })} />
           </Row>
