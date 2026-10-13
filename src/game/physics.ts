@@ -209,19 +209,24 @@ export function currentStats() {
   const s = useSave.getState();
   const def = carById(s.selected);
   const base: CarStats = def.stats;
-  const u = s.upgrades;
+  const u = def.elite ? { engine: 5, nitro: 5, cooler: 5, grip: 5, magnet: 5, suspension: 5, aero: 5 } : s.upgrades;
+  const special = def.special;
   const eng = 1 + 0.04 * u.engine;
   const ch = s.cheatsUnlocked ? s.cheats : null;
   const spd = ch?.superSpeed ? 2 : 1;
   return {
     ...base,
     electric: !!def.electric,
-    top: base.top * eng * (ch?.superSpeed ? 1.5 : 1),
+    top: base.top * eng * (1 + 0.02 * u.aero) * (ch?.superSpeed ? 1.5 : 1),
     accel: base.accel * eng * spd,
     handling: base.handling * (1 + 0.07 * u.grip),
-    boostDur: 2 + 0.4 * u.nitro,
-    cooldown: ch?.unlimitedBoost ? 0 : Math.max(5, 14 - 0.8 * u.cooler),
-    magnet: 2.6 + 0.9 * u.magnet,
+    landing: base.landing * (1 + 0.08 * u.suspension),
+    boostDur: 2 + 0.4 * u.nitro + (special?.boostSeconds ?? 0),
+    cooldown: ch?.unlimitedBoost ? 0 : Math.max(5, 14 - 0.8 * u.cooler) * (special?.recharge ?? 1),
+    magnet: 2.6 + 0.9 * u.magnet + (special?.magnet ?? 0),
+    airLevel: (1 + 0.12 * u.aero) * (special?.airAssist ?? 1),
+    traction: (1 + 0.07 * u.grip) * (special?.traction ?? 1),
+    trickReward: special?.reward ?? 1,
   };
 }
 
@@ -312,7 +317,7 @@ function land(gy: number, stats: ReturnType<typeof currentStats>) {
     base += Math.floor(air * 4);
   }
   if (base > 0) {
-    const reward = Math.round(base * P.combo);
+    const reward = Math.round(base * P.combo * stats.trickReward);
     award(reward);
     P.runTricks += 1;
     const comboTxt = P.combo > 1 ? ` x${P.combo.toFixed(1)}` : "";
@@ -543,7 +548,7 @@ function stepPhysics(rawDt: number) {
     P.speed = oldSpeed * Math.cos(turn) + P.lateral * Math.sin(turn);
     P.lateral = P.lateral * Math.cos(turn) - oldSpeed * Math.sin(turn);
     const drift = Math.max(0, Math.min(1, (Math.abs(P.speed) - 22) / 18)) * Math.abs(P.steer);
-    const grip = (ROAD_GRIP + (DRIFT_GRIP - ROAD_GRIP) * drift) * (1 + useSave.getState().upgrades.grip * 0.07);
+    const grip = (ROAD_GRIP + (DRIFT_GRIP - ROAD_GRIP) * drift) * stats.traction;
     P.lateral *= Math.exp(-grip * dt);
     if (Math.abs(P.speed) < 0.1) P.lateral *= Math.exp(-12 * dt);
   } else {
@@ -571,7 +576,7 @@ function stepPhysics(rawDt: number) {
       // Release trick keys to ease toward the nearest full rotation; F levels faster.
       // Full turns are preserved so landing assistance does not erase trick rewards.
       const assist = k.level();
-      const ease = 1 - Math.exp(-(assist ? AIR_LEVEL_RATE : 2.2) * dt);
+      const ease = 1 - Math.exp(-(assist ? AIR_LEVEL_RATE : 2.2) * stats.airLevel * dt);
       if (autoFlip === 0) {
         const angle = P.takeoffPitch + P.tPitch;
         P.tPitch += (Math.round(angle / TAU) * TAU - angle) * ease;

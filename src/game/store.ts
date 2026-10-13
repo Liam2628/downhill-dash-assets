@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { CARS, type UpgradeId } from "./data";
+import { CARS, EQUIPMENT, UPGRADES, type EquipmentId, type UpgradeId } from "./data";
 
 // --- Save integrity -------------------------------------------------------
 // The save lives in localStorage, which anyone can edit by hand. To stop a
@@ -72,6 +72,10 @@ function sanitizeSave(p: Partial<Save>): Partial<Save> {
   out.bestTricks = clampInt(p.bestTricks, 0, 9_999_999, 0);
   out.runs = clampInt(p.runs, 0, 9_999_999, 0);
   out.cheatsUnlocked = p.cheatsUnlocked === true;
+  out.equipmentOwned = Array.isArray(p.equipmentOwned) ? p.equipmentOwned.filter((id) => EQUIPMENT.some((e) => e.id === id)) : [];
+  out.rims = p.rims === "chrome" || p.rims === "halo" ? (out.equipmentOwned.includes(p.rims) ? p.rims : null) : null;
+  out.wing = p.wing === true && out.equipmentOwned.includes("wing");
+  out.upgrades = Object.fromEntries(UPGRADES.map((u) => [u.id, clampInt(p.upgrades?.[u.id], 0, u.costs.length, 0)])) as Record<UpgradeId, number>;
   const c = (p.cheats ?? {}) as Partial<Cheats>;
   out.cheats = out.cheatsUnlocked
     ? { unlimitedBoost: c.unlimitedBoost === true, moonGravity: c.moonGravity === true, superSpeed: c.superSpeed === true, fly: c.fly === true, noclip: c.noclip === true, spectator: c.spectator === true }
@@ -118,6 +122,9 @@ type Save = {
   trail: string | null;
   trailUnlocked: boolean;
   upgrades: Record<UpgradeId, number>;
+  equipmentOwned: EquipmentId[];
+  rims: "chrome" | "halo" | null;
+  wing: boolean;
   settings: Settings;
   best: number | null;
   bestTricks: number;
@@ -140,6 +147,9 @@ type SaveActions = {
   unlockGlow: (price: number) => boolean;
   unlockTrail: (price: number) => boolean;
   buyUpgrade: (id: UpgradeId, cost: number) => boolean;
+  buyEquipment: (id: EquipmentId) => boolean;
+  setRims: (rims: "chrome" | "halo" | null) => void;
+  setWing: (v: boolean) => void;
   setSettings: (p: Partial<Settings>) => void;
   recordRun: (time: number, tricks: number) => boolean;
   claimDaily: (day: string) => void;
@@ -159,7 +169,10 @@ const initial: Save = {
   glowUnlocked: false,
   trail: null,
   trailUnlocked: false,
-  upgrades: { engine: 0, nitro: 0, cooler: 0, grip: 0, magnet: 0 },
+  upgrades: { engine: 0, nitro: 0, cooler: 0, grip: 0, magnet: 0, suspension: 0, aero: 0 },
+  equipmentOwned: [],
+  rims: null,
+  wing: false,
   settings: {
     volume: 1,
     muted: false,
@@ -217,9 +230,24 @@ export const useSave = create<Save & SaveActions>()(
         return true;
       },
       buyUpgrade: (id, cost) => {
+        const def = UPGRADES.find((u) => u.id === id);
+        const level = get().upgrades[id];
+        if (!def || level >= def.costs.length || cost !== def.costs[level]) return false;
         if (!get().spend(cost)) return false;
         set({ upgrades: { ...get().upgrades, [id]: get().upgrades[id] + 1 } });
         return true;
+      },
+      buyEquipment: (id) => {
+        const item = EQUIPMENT.find((e) => e.id === id);
+        if (!item || get().equipmentOwned.includes(id) || !get().spend(item.price)) return false;
+        set({ equipmentOwned: [...get().equipmentOwned, id] });
+        return true;
+      },
+      setRims: (rims) => {
+        if (rims === null || get().equipmentOwned.includes(rims)) set({ rims });
+      },
+      setWing: (v) => {
+        if (!v || get().equipmentOwned.includes("wing")) set({ wing: v });
       },
       setSettings: (p) => set({ settings: { ...get().settings, ...p } }),
       recordRun: (time, tricks) => {
