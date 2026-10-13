@@ -368,6 +368,7 @@ export function step(rawDt: number) {
   const elapsed = Math.max(0, Math.min(rawDt, 0.05));
   ensureTrack(Math.max(0, -P.z));
   syncGenerated();
+  if (freeMove(elapsed)) return;
   const count = Math.max(1, Math.ceil(elapsed / (1 / 120)));
   for (let i = 0; i < count; i++) stepPhysics(elapsed / count);
 }
@@ -1059,4 +1060,41 @@ function publish(dt: number, mode: string) {
 function anyDriveKey() {
   return keys.size > 0;
   return false;
+}
+
+/** Spectator camera state (free camera, car frozen). */
+export const spec = { active: false, x: 0, y: 0, z: 0, yaw: 0, pitch: -0.2 };
+
+/** Fly / noclip / spectator cheats. Returns true when normal physics is skipped. */
+function freeMove(dt: number) {
+  const s = useSave.getState();
+  const mode = useGame.getState().mode;
+  const ch = s.cheatsUnlocked ? s.cheats : null;
+  const playing = mode === "run" || mode === "hub";
+  const specOn = !!ch?.spectator && playing;
+  if (specOn && !spec.active) { spec.x = P.x; spec.y = P.y + 4; spec.z = P.z; spec.yaw = P.yaw; spec.pitch = -0.2; }
+  spec.active = specOn;
+  const flying = playing && (specOn || ch?.fly || ch?.noclip);
+  if (!flying) return false;
+  const SPEED = (k.boost() && !specOn ? 3 : 1) * (ch?.superSpeed ? 2 : 1) * 30;
+  const turn = (k.left() ? 1 : 0) - (k.right() ? 1 : 0);
+  const fwd = (k.up() ? 1 : 0) - (k.down() ? 1 : 0);
+  const vert = (keys.has("KeyE") || keys.has("ShiftLeft") ? 1 : 0) - (keys.has("KeyQ") || keys.has("ControlLeft") ? 1 : 0);
+  if (specOn) {
+    spec.yaw += turn * 2 * dt;
+    spec.x += Math.sin(spec.yaw) * fwd * SPEED * dt;
+    spec.z += Math.cos(spec.yaw) * fwd * SPEED * dt;
+    spec.y += vert * SPEED * dt;
+    P.speed = 0; P.boosting = false;
+    return true;
+  }
+  P.yaw += turn * 2 * dt;
+  P.x += Math.sin(P.yaw) * fwd * SPEED * dt;
+  P.z += Math.cos(P.yaw) * fwd * SPEED * dt;
+  P.y += vert * SPEED * dt;
+  if (!ch?.noclip) P.y = Math.max(P.y, hAt(-P.z) + 0.5);
+  P.speed = fwd * SPEED; P.vy = 0; P.lateral = 0; P.grounded = false;
+  P.pitch = 0; P.roll = 0; P.tPitch = 0; P.tRoll = 0; P.tYaw = 0; P.loop = null;
+  P.boosting = k.boost() && fwd !== 0;
+  return true;
 }

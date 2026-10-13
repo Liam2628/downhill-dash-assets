@@ -3,7 +3,7 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { Trail } from "@react-three/drei";
 import { CarModel, type CarHandle } from "./CarModel";
-import { P, step } from "./physics";
+import { P, step, spec } from "./physics";
 import { useGame, useSave } from "./store";
 import { orbit } from "./input";
 import { view } from "./quests";
@@ -136,6 +136,12 @@ export function Player() {
       const ahead = hood ? 14 : 4;
       tmpLook.set(P.x + fx * ahead * (1 - P.loopCamera), P.y + (hood ? 1.1 : 1.4) * (1 - P.loopCamera), P.z + fz * ahead * (1 - P.loopCamera));
       camLook.current.lerp(tmpLook, 1 - Math.exp(-10 * dt));
+    }
+    if (spec.active && (g.mode === "run" || g.mode === "hub")) {
+      tmpV.set(spec.x, spec.y, spec.z);
+      cam.position.copy(tmpV);
+      tmpLook.set(spec.x + Math.sin(spec.yaw) * 10, spec.y - 2, spec.z + Math.cos(spec.yaw) * 10);
+      camLook.current.copy(tmpLook);
     }
     if (P.snapCam) {
       cam.position.copy(tmpV); camLook.current.copy(tmpLook); P.snapCam = false;

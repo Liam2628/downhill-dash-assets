@@ -280,6 +280,9 @@ function CodesSection() {
     { k: "unlimitedBoost", label: "Unlimited Boost" },
     { k: "moonGravity", label: "Moon Gravity" },
     { k: "superSpeed", label: "Super Speed" },
+    { k: "fly", label: "Fly (E up · Q down)" },
+    { k: "noclip", label: "Noclip (fly through anything)" },
+    { k: "spectator", label: "Spectator (free camera)" },
   ];
   const actions = [
     { label: "+50,000 WHEELS", run: () => save().addWheels(50_000) },

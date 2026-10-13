@@ -74,7 +74,7 @@ function sanitizeSave(p: Partial<Save>): Partial<Save> {
   out.cheatsUnlocked = p.cheatsUnlocked === true;
   const c = (p.cheats ?? {}) as Partial<Cheats>;
   out.cheats = out.cheatsUnlocked
-    ? { unlimitedBoost: c.unlimitedBoost === true, moonGravity: c.moonGravity === true, superSpeed: c.superSpeed === true }
+    ? { unlimitedBoost: c.unlimitedBoost === true, moonGravity: c.moonGravity === true, superSpeed: c.superSpeed === true, fly: c.fly === true, noclip: c.noclip === true, spectator: c.spectator === true }
     : { ...initial.cheats };
   return out;
 }
@@ -126,7 +126,7 @@ type Save = {
   cheats: Cheats;
 };
 
-export type Cheats = { unlimitedBoost: boolean; moonGravity: boolean; superSpeed: boolean };
+export type Cheats = { unlimitedBoost: boolean; moonGravity: boolean; superSpeed: boolean; fly: boolean; noclip: boolean; spectator: boolean };
 
 type SaveActions = {
   addWheels: (n: number) => void;
@@ -176,7 +176,7 @@ const initial: Save = {
   runs: 0,
   lastDaily: null,
   cheatsUnlocked: false,
-  cheats: { unlimitedBoost: false, moonGravity: false, superSpeed: false },
+  cheats: { unlimitedBoost: false, moonGravity: false, superSpeed: false, fly: false, noclip: false, spectator: false },
 };
 
 export const useSave = create<Save & SaveActions>()(
