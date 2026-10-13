@@ -37,6 +37,22 @@ function WheelCounter() {
   );
 }
 
+function XpCounter() {
+  const xp = useSave((s) => s.xp);
+  const [bump, setBump] = useState(0);
+  const prev = useRef(xp);
+  useEffect(() => {
+    if (xp > prev.current) setBump((b) => b + 1);
+    prev.current = xp;
+  }, [xp]);
+  return (
+    <div className="hud-chip flex items-center gap-2 px-3 py-1" aria-label="Experience points">
+      <span key={bump} className="animate-wheel-bump inline-flex rounded-md bg-cool px-1.5 font-display text-xs text-panel">XP</span>
+      <span className="font-display text-lg text-cool tabular-nums">{xp.toLocaleString()}</span>
+    </div>
+  );
+}
+
 function TopBar() {
   const setSettingsOpen = useGame((s) => s.setSettingsOpen);
   const muted = useSave((s) => s.settings.muted);
@@ -46,7 +62,10 @@ function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
       <div className="pointer-events-auto flex items-center gap-3">
-        <WheelCounter />
+        <div className="flex flex-col items-start gap-1.5">
+          <WheelCounter />
+          <XpCounter />
+        </div>
         {showFps && <div className="hud-chip px-2 py-1 font-mono text-xs">{fps} FPS</div>}
       </div>
       <div className="pointer-events-auto flex gap-2">
@@ -243,7 +262,7 @@ function QuestPanel() {
   const best = useQuests((s) => s.best);
   const done = useQuests((s) => s.done);
   return (
-    <div className="pointer-events-none absolute left-4 top-24 w-64 rounded-xl border-2 border-panel-border bg-panel/90 p-3 text-panel-foreground shadow-[var(--shadow-chunky)]">
+    <div className="pointer-events-none absolute left-4 top-32 w-64 rounded-xl border-2 border-panel-border bg-panel/90 p-3 text-panel-foreground shadow-[var(--shadow-chunky)]">
       <div className="mb-2 font-display text-sm text-gold">DAILY QUESTS</div>
       {QUESTS.map((q) => {
         const v = Math.min(q.goal, Math.max(run[q.id], q.id === "combo" ? best[q.id] : run[q.id]));
