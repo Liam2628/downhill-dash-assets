@@ -29,6 +29,7 @@ import {
 } from "./track";
 import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
 import { k, doubleTap, keys } from "./input";
+import { TrickTracker } from "./tricks";
 import { QUESTS, SPLITS, loadSplitPB, questProgress, questsNewRun, saveSplitPB } from "./quests";
 import { audio, type CrashKind } from "./audio";
 
@@ -145,7 +146,9 @@ export function resetRun() {
   P.bestCombo = 1;
 }
 
+const tricks = new TrickTracker();
 function resetAir() {
+  tricks.reset();
   P.tYaw = 0;
   P.tPitch = 0;
   P.tRoll = 0;
@@ -297,21 +300,11 @@ function land(gy: number, stats: ReturnType<typeof currentStats>) {
     return;
   }
   if (air > 0.25) audio.land(Math.min(1, impactV / 25));
-  const parts: string[] = [];
-  let base = 0;
-  if (flips) {
-    parts.push((flips > 1 ? `${flips}x ` : "") + (P.tPitch < 0 ? "BACKFLIP" : "FRONTFLIP"));
-    if (P.tPitch < 0) { runBackflips += flips; questDone(questProgress("backflips", runBackflips)); }
-    base += flips * 18;
-  }
-  if (spins) {
-    parts.push(`${spins * 360}`);
-    base += spins * 12;
-  }
-  if (rolls) {
-    parts.push((rolls > 1 ? `${rolls}x ` : "") + "BARREL ROLL");
-    base += rolls * 14;
-  }
+  void spins; void flips; void rolls;
+  const ev = tricks.evaluate();
+  const parts: string[] = [...ev.parts];
+  let base = ev.pts;
+  if (ev.counts.backflips) { runBackflips += ev.counts.backflips; questDone(questProgress("backflips", runBackflips)); }
   if (air > 1.1) {
     parts.push(air > 2 ? "HUGE AIR" : "BIG AIR");
     base += Math.floor(air * 4);
