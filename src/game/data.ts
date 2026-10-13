@@ -16,6 +16,8 @@ export type CarDef = {
   desc: string;
   scale: number;
   electric?: boolean;
+  elite?: boolean;
+  special?: { name: string; desc: string; recharge?: number; magnet?: number; reward?: number; airAssist?: number; traction?: number; boostSeconds?: number };
   stats: CarStats;
 };
 
@@ -165,7 +167,7 @@ export const GLOWS: { name: string; hex: string | null }[] = [
 export const GLOW_UNLOCK = 250;
 export const TRAIL_UNLOCK = 400;
 
-export type UpgradeId = "engine" | "nitro" | "cooler" | "grip" | "magnet";
+export type UpgradeId = "engine" | "nitro" | "cooler" | "grip" | "magnet" | "suspension" | "aero";
 
 export const UPGRADES: { id: UpgradeId; name: string; desc: string; costs: number[] }[] = [
   { id: "engine", name: "Engine", desc: "+4% top speed & acceleration per level", costs: [150, 350, 700, 1200, 2000] },
@@ -173,4 +175,13 @@ export const UPGRADES: { id: UpgradeId; name: string; desc: string; costs: numbe
   { id: "cooler", name: "Turbo Cooler", desc: "-0.8s boost cooldown per level", costs: [120, 300, 600, 1000, 1600] },
   { id: "grip", name: "Grip Tires", desc: "+7% steering per level", costs: [100, 250, 500, 850, 1400] },
   { id: "magnet", name: "Wheel Magnet", desc: "Bigger wheel pickup radius", costs: [100, 250, 500, 850, 1400] },
+  { id: "suspension", name: "Adaptive Suspension", desc: "+8% landing tolerance per level", costs: [250, 600, 1400, 3000, 6000] },
+  { id: "aero", name: "Active Aero", desc: "+2% top speed & faster air leveling per level", costs: [400, 1000, 2200, 5000, 10000] },
+];
+
+export type EquipmentId = "chrome" | "halo" | "wing";
+export const EQUIPMENT: { id: EquipmentId; name: string; desc: string; price: number }[] = [
+  { id: "chrome", name: "Chrome Rims", desc: "Polished silver wheel faces", price: 2500 },
+  { id: "halo", name: "Halo Rims", desc: "Glowing rings matched to your underglow", price: 8000 },
+  { id: "wing", name: "Carbon Wing", desc: "A sculpted rear spoiler", price: 5000 },
 ];
