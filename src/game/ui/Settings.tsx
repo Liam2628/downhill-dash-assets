@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { keyLabel, rebinding } from "../input";
 import { DEFAULT_KEYS, type Action } from "../store";
 
@@ -137,7 +137,7 @@ export function SettingsModal() {
   const close = useGame((st) => st.setSettingsOpen);
   const mode = useGame((st) => st.mode);
   const [confirm, setConfirm] = useState(false);
-  const [tab, setTab] = useState<"general" | "controls" | "secret">("general");
+  const [tab, setTab] = useState<"general" | "controls" | "codes">("general");
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-panel/40" onClick={() => close(false)}>
@@ -149,7 +149,7 @@ export function SettingsModal() {
           </button>
         </div>
         <div className="mb-2 flex gap-2">
-          {(["general", "controls", "secret"] as const).map((t) => (
+          {(["general", "controls", "codes"] as const).map((t) => (
             <button
               key={t}
               className={`flex-1 rounded-xl py-2 font-display text-sm ${tab === t ? "bg-hot text-primary-foreground" : "bg-panel-foreground/10"}`}
@@ -158,14 +158,14 @@ export function SettingsModal() {
                 setTab(t);
               }}
             >
-              {t === "general" ? "GENERAL" : t === "controls" ? "CONTROLS" : "SECRET"}
+              {t === "general" ? "GENERAL" : t === "controls" ? "CONTROLS" : "CODES"}
             </button>
           ))}
         </div>
         {tab === "controls" ? (
           <ControlsSection />
-        ) : tab === "secret" ? (
-          <SecretSection />
+        ) : tab === "codes" ? (
+          <CodesSection />
         ) : (
         <div className="divide-y divide-panel-foreground/10">
           <Row label="Volume">
@@ -203,31 +203,28 @@ export function SettingsModal() {
               BACK TO LOBBY
             </button>
           )}
-          {confirm ? (
-            <button
-              className="btn-game flex-1 bg-bad text-primary-foreground"
-              onClick={() => {
-                reset();
-                setConfirm(false);
-                returnToLobby();
-                close(false);
-              }}
-            >
-              REALLY RESET?
-            </button>
-          ) : (
-            <button className="btn-game btn-ghost flex-1" onClick={() => setConfirm(true)}>
-              RESET PROGRESS
-            </button>
-          )}
+          <button className="btn-game btn-ghost flex-1" onClick={() => setConfirm(true)}>
+            RESET PROGRESS
+          </button>
         </div>
+        {confirm && (
+          <ResetConfirm
+            onCancel={() => setConfirm(false)}
+            onConfirm={() => {
+              reset();
+              setConfirm(false);
+              returnToLobby();
+              close(false);
+            }}
+          />
+        )}
         <p className="mt-3 text-center text-xs opacity-60">Esc to close · M to mute · Progress saves automatically</p>
       </div>
     </div>
   );
 }
 
-// SHA-256 of the secret code; the code itself never appears in source.
+// SHA-256 of the unlock code; the code itself never appears in source.
 const CODE_HASH = "51c94a510b50e68f490e35edd977845f9b008e3bb1a5c7f0d8eecf8b0b9794bf";
 
 async function sha256Hex(text: string) {
@@ -235,7 +232,7 @@ async function sha256Hex(text: string) {
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function SecretSection() {
+function CodesSection() {
   const unlocked = useSave((st) => st.cheatsUnlocked);
   const cheats = useSave((st) => st.cheats);
   const save = useSave.getState;
@@ -257,7 +254,7 @@ function SecretSection() {
           setCode("");
         }}
       >
-        <label className="text-sm font-medium">Enter secret code</label>
+        <label className="text-sm font-medium">Enter code</label>
         <div className="mt-2 flex gap-2">
           <input
             type="password"
@@ -318,6 +315,80 @@ function SecretSection() {
             {a.label}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+const ARM_DELAY = 1000;
+const HOLD_TIME = 1000;
+
+function ResetConfirm({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
+  const [armed, setArmed] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [holding, setHolding] = useState(false);
+  const raf = useRef<number | null>(null);
+  const start = useRef(0);
+  const done = useRef(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setArmed(true), ARM_DELAY);
+    return () => {
+      clearTimeout(t);
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
+  }, []);
+
+  const stop = () => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = null;
+    setHolding(false);
+    if (!done.current) setProgress(0);
+  };
+  const begin = (e: React.PointerEvent) => {
+    if (!armed || done.current) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setHolding(true);
+    start.current = performance.now();
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - start.current) / HOLD_TIME);
+      setProgress(p);
+      if (p >= 1) {
+        done.current = true;
+        raf.current = null;
+        setHolding(false);
+        onConfirm();
+        return;
+      }
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
+
+  const label = !armed ? "PLEASE WAIT..." : holding ? "KEEP HOLDING..." : "HOLD TO RESET";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-panel/60" onClick={(e) => { e.stopPropagation(); onCancel(); }}>
+      <div role="alertdialog" aria-modal="true" aria-labelledby="reset-title" className="panel animate-scale-in w-[min(380px,90vw)] p-6 text-center" onClick={(e) => e.stopPropagation()}>
+        <h3 id="reset-title" className="font-display text-2xl text-gold">ARE YOU SURE?</h3>
+        <p className="mt-2 text-sm opacity-80">This erases all your wheels, cars, upgrades and records. It can't be undone.</p>
+        <button
+          disabled={!armed}
+          aria-label="Hold to reset progress"
+          className={`relative mt-5 w-full select-none overflow-hidden rounded-xl py-3 font-display text-sm text-primary-foreground transition-opacity ${armed ? "bg-bad/70 cursor-pointer" : "bg-bad/30 cursor-not-allowed opacity-60"}`}
+          style={{ touchAction: "none" }}
+          onPointerDown={begin}
+          onPointerUp={stop}
+          onPointerLeave={stop}
+          onPointerCancel={stop}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <span className="absolute inset-y-0 left-0 bg-bad" style={{ width: `${progress * 100}%` }} />
+          <span className="relative">{label}</span>
+        </button>
+        <button className="btn-game btn-ghost mt-3 w-full" onClick={() => { audio.play("ui"); onCancel(); }}>
+          CANCEL
+        </button>
       </div>
     </div>
   );
