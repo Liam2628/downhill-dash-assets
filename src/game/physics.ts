@@ -200,20 +200,27 @@ export function exitMenu() {
   P.snapCam = true;
 }
 
+function gravityScale() {
+  const s = useSave.getState();
+  return s.cheatsUnlocked && s.cheats.moonGravity ? 0.4 : 1;
+}
+
 export function currentStats() {
   const s = useSave.getState();
   const def = carById(s.selected);
   const base: CarStats = def.stats;
   const u = s.upgrades;
   const eng = 1 + 0.04 * u.engine;
+  const ch = s.cheatsUnlocked ? s.cheats : null;
+  const spd = ch?.superSpeed ? 2 : 1;
   return {
     ...base,
     electric: !!def.electric,
-    top: base.top * eng,
-    accel: base.accel * eng,
+    top: base.top * eng * (ch?.superSpeed ? 1.5 : 1),
+    accel: base.accel * eng * spd,
     handling: base.handling * (1 + 0.07 * u.grip),
     boostDur: 2 + 0.4 * u.nitro,
-    cooldown: Math.max(5, 14 - 0.8 * u.cooler),
+    cooldown: ch?.unlimitedBoost ? 0 : Math.max(5, 14 - 0.8 * u.cooler),
     magnet: 2.6 + 0.9 * u.magnet,
   };
 }
@@ -539,7 +546,7 @@ function stepPhysics(rawDt: number) {
     P.lateral *= Math.exp(-grip * dt);
     if (Math.abs(P.speed) < 0.1) P.lateral *= Math.exp(-12 * dt);
   } else {
-    P.vy -= G * dt;
+    P.vy -= G * gravityScale() * dt;
     P.speed *= Math.exp(-0.05 * dt);
     if (P.boosting) P.speed += 10 * dt;
     if (controls) {

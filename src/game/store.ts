@@ -71,6 +71,11 @@ function sanitizeSave(p: Partial<Save>): Partial<Save> {
   out.best = typeof p.best === "number" && Number.isFinite(p.best) && p.best > 0 ? p.best : null;
   out.bestTricks = clampInt(p.bestTricks, 0, 9_999_999, 0);
   out.runs = clampInt(p.runs, 0, 9_999_999, 0);
+  out.cheatsUnlocked = p.cheatsUnlocked === true;
+  const c = (p.cheats ?? {}) as Partial<Cheats>;
+  out.cheats = out.cheatsUnlocked
+    ? { unlimitedBoost: c.unlimitedBoost === true, moonGravity: c.moonGravity === true, superSpeed: c.superSpeed === true }
+    : { ...initial.cheats };
   return out;
 }
 
@@ -117,7 +122,11 @@ type Save = {
   bestTricks: number;
   runs: number;
   lastDaily: string | null;
+  cheatsUnlocked: boolean;
+  cheats: Cheats;
 };
+
+export type Cheats = { unlimitedBoost: boolean; moonGravity: boolean; superSpeed: boolean };
 
 type SaveActions = {
   addWheels: (n: number) => void;
@@ -134,6 +143,10 @@ type SaveActions = {
   recordRun: (time: number, tricks: number) => boolean;
   claimDaily: (day: string) => void;
   reset: () => void;
+  unlockCheats: () => void;
+  setCheat: (k: keyof Cheats, v: boolean) => void;
+  cheatAllCars: () => void;
+  cheatMaxUpgrades: () => void;
 };
 
 const initial: Save = {
@@ -162,6 +175,8 @@ const initial: Save = {
   bestTricks: 0,
   runs: 0,
   lastDaily: null,
+  cheatsUnlocked: false,
+  cheats: { unlimitedBoost: false, moonGravity: false, superSpeed: false },
 };
 
 export const useSave = create<Save & SaveActions>()(
@@ -217,6 +232,19 @@ export const useSave = create<Save & SaveActions>()(
       },
       claimDaily: (day) => set({ lastDaily: day }),
       reset: () => set({ ...initial }),
+      unlockCheats: () => set({ cheatsUnlocked: true }),
+      setCheat: (k, v) => {
+        if (get().cheatsUnlocked) set({ cheats: { ...get().cheats, [k]: v } });
+      },
+      cheatAllCars: () => {
+        if (get().cheatsUnlocked) set({ owned: CARS.map((c) => c.id) });
+      },
+      cheatMaxUpgrades: () => {
+        if (!get().cheatsUnlocked) return;
+        const u = { ...get().upgrades };
+        for (const k of Object.keys(u) as UpgradeId[]) u[k] = 5;
+        set({ upgrades: u });
+      },
     }),
     {
       name: "downhill-drive-save-v1",
