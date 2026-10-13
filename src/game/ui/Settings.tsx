@@ -137,7 +137,7 @@ export function SettingsModal() {
   const close = useGame((st) => st.setSettingsOpen);
   const mode = useGame((st) => st.mode);
   const [confirm, setConfirm] = useState(false);
-  const [tab, setTab] = useState<"general" | "controls">("general");
+  const [tab, setTab] = useState<"general" | "controls" | "secret">("general");
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-panel/40" onClick={() => close(false)}>
@@ -149,7 +149,7 @@ export function SettingsModal() {
           </button>
         </div>
         <div className="mb-2 flex gap-2">
-          {(["general", "controls"] as const).map((t) => (
+          {(["general", "controls", "secret"] as const).map((t) => (
             <button
               key={t}
               className={`flex-1 rounded-xl py-2 font-display text-sm ${tab === t ? "bg-hot text-primary-foreground" : "bg-panel-foreground/10"}`}
@@ -158,12 +158,14 @@ export function SettingsModal() {
                 setTab(t);
               }}
             >
-              {t === "general" ? "GENERAL" : "CONTROLS"}
+              {t === "general" ? "GENERAL" : t === "controls" ? "CONTROLS" : "SECRET"}
             </button>
           ))}
         </div>
         {tab === "controls" ? (
           <ControlsSection />
+        ) : tab === "secret" ? (
+          <SecretSection />
         ) : (
         <div className="divide-y divide-panel-foreground/10">
           <Row label="Volume">
@@ -220,6 +222,102 @@ export function SettingsModal() {
           )}
         </div>
         <p className="mt-3 text-center text-xs opacity-60">Esc to close · M to mute · Progress saves automatically</p>
+      </div>
+    </div>
+  );
+}
+
+// SHA-256 of the secret code; the code itself never appears in source.
+const CODE_HASH = "51c94a510b50e68f490e35edd977845f9b008e3bb1a5c7f0d8eecf8b0b9794bf";
+
+async function sha256Hex(text: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function SecretSection() {
+  const unlocked = useSave((st) => st.cheatsUnlocked);
+  const cheats = useSave((st) => st.cheats);
+  const save = useSave.getState;
+  const popup = useGame((st) => st.popup);
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState(false);
+
+  if (!unlocked) {
+    return (
+      <form
+        className="py-3"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if ((await sha256Hex(code.trim())) === CODE_HASH) {
+            save().unlockCheats();
+            audio.play("ui");
+            popup("CHEATS UNLOCKED", "gold");
+          } else setErr(true);
+          setCode("");
+        }}
+      >
+        <label className="text-sm font-medium">Enter secret code</label>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="off"
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value);
+              setErr(false);
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            className="flex-1 rounded-xl bg-panel-foreground/10 px-3 py-2 font-mono text-sm outline-none"
+            placeholder="••••"
+          />
+          <button type="submit" className="btn-game btn-cool">UNLOCK</button>
+        </div>
+        {err && <p className="mt-2 text-xs text-bad">Wrong code</p>}
+      </form>
+    );
+  }
+
+  const toggles: { k: keyof typeof cheats; label: string }[] = [
+    { k: "unlimitedBoost", label: "Unlimited Boost" },
+    { k: "moonGravity", label: "Moon Gravity" },
+    { k: "superSpeed", label: "Super Speed" },
+  ];
+  const actions = [
+    { label: "+50,000 WHEELS", run: () => save().addWheels(50_000) },
+    { label: "UNLOCK ALL CARS", run: () => save().cheatAllCars() },
+    { label: "MAX ALL UPGRADES", run: () => save().cheatMaxUpgrades() },
+  ];
+  return (
+    <div className="py-2">
+      <h3 className="font-display text-sm text-gold">RUN TOGGLES</h3>
+      <div className="divide-y divide-panel-foreground/10">
+        {toggles.map((t) => (
+          <Row key={t.k} label={t.label}>
+            <Seg
+              value={cheats[t.k] ? "on" : "off"}
+              options={[{ v: "on", label: "ON" }, { v: "off", label: "OFF" }]}
+              onChange={(v) => save().setCheat(t.k, v === "on")}
+            />
+          </Row>
+        ))}
+      </div>
+      <h3 className="mt-3 font-display text-sm text-gold">ONE-TAP ACTIONS</h3>
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {actions.map((a) => (
+          <button
+            key={a.label}
+            className="btn-game btn-cool text-xs"
+            onClick={() => {
+              a.run();
+              audio.play("ui");
+              popup(a.label, "gold");
+            }}
+          >
+            {a.label}
+          </button>
+        ))}
       </div>
     </div>
   );
