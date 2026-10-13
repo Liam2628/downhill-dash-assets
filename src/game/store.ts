@@ -64,7 +64,7 @@ const clampInt = (n: unknown, min: number, max: number, fallback: number) =>
 
 function sanitizeSave(p: Partial<Save>): Partial<Save> {
   const out: Partial<Save> = { ...p };
-  out.wheels = clampInt(p.wheels, 0, 9_999_999, 0);
+  out.wheels = clampInt(p.wheels, 0, Number.MAX_SAFE_INTEGER, 0);
   out.owned = Array.isArray(p.owned) ? p.owned.filter((id) => CAR_IDS.has(id)) : initial.owned;
   if (out.owned.length === 0) out.owned = initial.owned;
   out.selected = typeof p.selected === "string" && out.owned.includes(p.selected) ? p.selected : out.owned[0];
