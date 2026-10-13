@@ -567,11 +567,6 @@ function stepPhysics(rawDt: number) {
         P.tRoll += stepR; autoRoll -= stepR;
         if (Math.abs(autoRoll) < 1e-4) autoRoll = 0;
       }
-      // Hold Q/E to spin, Z/C to barrel roll manually.
-      const spinIn = (k.spinL() ? 1 : 0) - (k.spinR() ? 1 : 0);
-      const rollIn = (k.rollR() ? 1 : 0) - (k.rollL() ? 1 : 0);
-      P.tYaw += spinIn * stats.air * dt;
-      if (rollIn) { autoRoll = 0; P.tRoll += rollIn * stats.air * 0.9 * dt; }
       // Release trick keys to ease toward the nearest full rotation; F levels faster.
       // Full turns are preserved so landing assistance does not erase trick rewards.
       const assist = k.level();
@@ -580,11 +575,11 @@ function stepPhysics(rawDt: number) {
         const angle = P.takeoffPitch + P.tPitch;
         P.tPitch += (Math.round(angle / TAU) * TAU - angle) * ease;
       }
-      if (autoRoll === 0 && !rollIn) {
+      if (autoRoll === 0) {
         const angle = P.roll + P.tRoll;
         P.tRoll += (Math.round(angle / TAU) * TAU - angle) * ease;
       }
-      if (!spinIn) P.tYaw += (Math.round(P.tYaw / TAU) * TAU - P.tYaw) * ease;
+      P.tYaw += (Math.round(P.tYaw / TAU) * TAU - P.tYaw) * ease;
       if (assist) {
         P.speed *= Math.exp(-0.65 * dt);
         P.lateral *= Math.exp(-5 * dt);
