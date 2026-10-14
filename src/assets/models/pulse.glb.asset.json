@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "8e857b73-c89d-4efd-bbf6-f573d63ff78c",
+  "asset_id": "4d391b4b-12fc-4545-8e54-2bf201b50a0f",
   "project_id": "bb24080b-25f2-47aa-9d8e-d89f43b6a33f",
-  "url": "/__l5e/assets-v1/8e857b73-c89d-4efd-bbf6-f573d63ff78c/pulse.glb",
-  "r2_key": "a/v1/bb24080b-25f2-47aa-9d8e-d89f43b6a33f/8e857b73-c89d-4efd-bbf6-f573d63ff78c/pulse.glb",
-  "original_filename": "pulse.glb",
-  "size": 177676,
+  "url": "/__l5e/assets-v1/4d391b4b-12fc-4545-8e54-2bf201b50a0f/pulse-new.glb",
+  "r2_key": "a/v1/bb24080b-25f2-47aa-9d8e-d89f43b6a33f/4d391b4b-12fc-4545-8e54-2bf201b50a0f/pulse-new.glb",
+  "original_filename": "pulse-new.glb",
+  "size": 207572,
   "content_type": "model/gltf-binary",
-  "created_at": "2026-10-13T21:33:10Z"
+  "created_at": "2026-10-14T01:24:36Z"
 }

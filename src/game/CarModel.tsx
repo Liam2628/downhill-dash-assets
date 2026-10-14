@@ -3,6 +3,7 @@ import { useMemo, useEffect, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 import { CARS, carById } from "./data";
 import { useSave } from "./store";
+import { sizeCar } from "./carSizing";
 
 export type CarHandle = { wheels: THREE.Object3D[]; front: THREE.Object3D[] };
 
@@ -174,10 +175,10 @@ function collect(root: THREE.Object3D) {
   const wheels: THREE.Object3D[] = [];
   const front: THREE.Object3D[] = [];
   root.traverse((o) => {
-    if (o.name.startsWith("wheel")) {
+    if (o.name.toLowerCase().startsWith("wheel")) {
       o.rotation.order = "YXZ";
       wheels.push(o);
-      if (o.name.includes("front")) front.push(o);
+      if (o.name.toLowerCase().includes("front")) front.push(o);
     }
   });
   return { wheels, front };
@@ -213,8 +214,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
   const { rims, wing, glow } = useEquip();
 
   const { root, wheels, front } = useMemo(() => {
-    const root = scene.clone(true);
-    root.scale.setScalar(def.scale);
+    const root = sizeCar(scene, def.length ?? 4.6);
     root.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
         const mesh = o as THREE.Mesh;
@@ -229,7 +229,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
     root.updateMatrixWorld(true);
     decorate(root, wheels, rims, wing, glow);
     return { root, wheels, front };
-  }, [scene, paint, def.scale, rims, wing, glow]);
+  }, [scene, paint, def.length, rims, wing, glow]);
 
   useImperativeHandle(ref, () => ({ wheels, front }), [wheels, front]);
   useEffect(() => () => dispose(root), [root]);
@@ -239,7 +239,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
 const AvtrCar = forwardRef<CarHandle, Props>(function AvtrCar({ paint }, ref) {
   const { rims, wing, glow } = useEquip();
   const { root, wheels, front } = useMemo(() => {
-    const root = buildAvtr(paint);
+    const root = sizeCar(buildAvtr(paint), 5.2);
     const { wheels, front } = collect(root);
     root.updateMatrixWorld(true);
     decorate(root, wheels, rims, wing, glow);

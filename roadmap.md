@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Finish car visuals: full-sized elite cars, distinct silhouettes, AVTR polish, automated and live dealership/driving checks
 - [x] Add eight max-stat elite cars above Hyperion X, with special abilities and a 500,000-wheel Mercedes Vision AVTR
 - [x] Expanded tricks: many flip/roll/spin variants, mid-rotation transitions count, chains/combos, no double counting, extensible registry
 - [ ] Expand garage customization and tuning shop upgrades; verify purchases, persistence, models and driving
