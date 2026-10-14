@@ -25,7 +25,7 @@ export function Player() {
   const camLook = useRef(new THREE.Vector3(0, 1, 30));
   const loopView = useRef(new THREE.Vector3());
   const airLift = useRef(0);
-  const { camera } = useThree();
+  const { camera, size } = useThree();
 
   const mode = useGame((s) => s.mode);
   const menu = useGame((s) => s.menu);
@@ -96,6 +96,12 @@ export function Player() {
 
     // ---------- camera ----------
     const cam = camera as THREE.PerspectiveCamera;
+    // Leave the vehicle visible beside the dealership instead of behind it.
+    if (g.mode === "menu" && size.width > 640) {
+      cam.setViewOffset(size.width, size.height, size.width * 0.2, 0, size.width, size.height);
+    } else if (cam.view?.enabled) {
+      cam.clearViewOffset();
+    }
     const k = 1 - Math.exp(-6 * dt);
     let fovTarget = Math.min(110, settings.fov + Math.min(18, Math.abs(P.speed) * 0.24) + (P.boosting ? 8 : 0));
 

@@ -3,6 +3,7 @@ import { useMemo, useEffect, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 import { CARS, carById } from "./data";
 import { useSave } from "./store";
+import { sizeCar } from "./carSizing";
 
 export type CarHandle = { wheels: THREE.Object3D[]; front: THREE.Object3D[] };
 
@@ -174,10 +175,10 @@ function collect(root: THREE.Object3D) {
   const wheels: THREE.Object3D[] = [];
   const front: THREE.Object3D[] = [];
   root.traverse((o) => {
-    if (o.name.startsWith("wheel")) {
+    if (o.name.toLowerCase().startsWith("wheel")) {
       o.rotation.order = "YXZ";
       wheels.push(o);
-      if (o.name.includes("front")) front.push(o);
+      if (o.name.toLowerCase().includes("front")) front.push(o);
     }
   });
   return { wheels, front };
@@ -200,10 +201,9 @@ function dispose(root: THREE.Object3D) {
       if (p.name === "equip") equip = true;
       p = p.parent;
     }
-    if (equip || (mesh.material as THREE.Material).customProgramCacheKey?.() === "paint") {
-      (mesh.material as THREE.Material).dispose();
-      if (equip) mesh.geometry.dispose();
-    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) if (equip || material.customProgramCacheKey?.() === "paint") material.dispose();
+    if (equip) mesh.geometry.dispose();
   });
 }
 
@@ -213,23 +213,57 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
   const { rims, wing, glow } = useEquip();
 
   const { root, wheels, front } = useMemo(() => {
-    const root = scene.clone(true);
-    root.scale.setScalar(def.scale);
+    const root = sizeCar(scene, def.length ?? 4.6);
     root.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
         const mesh = o as THREE.Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         if (mesh.name.startsWith("body") || (mesh.parent && mesh.parent.name.startsWith("body"))) {
-          mesh.material = paintMaterial(mesh.material as THREE.Material, paint);
+          const factory: Record<string, string> = { apex: "#36b77c", solaris: "#ff8a00", inferno: "#f43b44", phantom: "#e7edf3", vortex: "#dcb52f", pulse: "#20c4be", singularity: "#5889e6" };
+          const finish = (m: THREE.Material) => paintMaterial(m, paint ?? factory[carId] ?? null);
+          mesh.material = Array.isArray(mesh.material) ? mesh.material.map(finish) : finish(mesh.material);
         }
       }
     });
     const { wheels, front } = collect(root);
     root.updateMatrixWorld(true);
     decorate(root, wheels, rims, wing, glow);
+    if (def.elite) {
+      const trim = new THREE.MeshStandardMaterial({ color: "#20262e", metalness: 0.7, roughness: 0.3 });
+      const accent = new THREE.MeshBasicMaterial({ color: carId === "pulse" ? "#5fe8ff" : "#e7edf3" });
+      const add = (size: [number, number, number], pos: [number, number, number], mat: THREE.Material = trim) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
+        mesh.position.set(...pos); mesh.name = "equip"; mesh.castShadow = true; root.add(mesh);
+        return mesh;
+      };
+      const bounds = new THREE.Box3().setFromObject(root);
+      const width = bounds.max.x - bounds.min.x;
+      if (carId === "apex") { // Wide GT wing and splitter, not the formula profile of Solaris.
+        add([width * 0.95, 0.09, 0.5], [0, bounds.max.y + 0.25, -1.7]);
+        for (const x of [-0.55, 0.55]) add([0.06, 0.5, 0.16], [x, bounds.max.y, -1.7]);
+        add([width, 0.1, 0.45], [0, 0.18, 1.9]);
+      }
+      if (carId === "inferno") {
+        add([width * 0.9, 0.08, 0.4], [0, bounds.max.y + 0.15, -1.65]);
+        for (const x of [-0.65, 0.65]) add([0.22, 0.15, 0.9], [x, 0.25, 0.2]);
+      }
+      if (carId === "phantom") {
+        add([0.12, 0.025, 2.9], [-0.18, bounds.max.y + 0.01, 0], accent);
+        add([0.12, 0.025, 2.9], [0.18, bounds.max.y + 0.01, 0], accent);
+      }
+      if (carId === "pulse") {
+        add([width * 0.85, 0.055, 0.07], [0, 0.85, 2], accent);
+        for (const x of [-width * 0.45, width * 0.45]) add([0.06, 0.06, 3], [x, 0.28, 0], accent);
+      }
+      if (carId === "singularity") {
+        const fin = add([0.07, 0.65, 1.3], [0, bounds.max.y + 0.2, -0.8]);
+        fin.rotation.x = -0.15;
+        add([width, 0.08, 0.5], [0, bounds.max.y + 0.45, -1.7]);
+      }
+    }
     return { root, wheels, front };
-  }, [scene, paint, def.scale, rims, wing, glow]);
+  }, [scene, paint, def.length, rims, wing, glow]);
 
   useImperativeHandle(ref, () => ({ wheels, front }), [wheels, front]);
   useEffect(() => () => dispose(root), [root]);
@@ -239,7 +273,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
 const AvtrCar = forwardRef<CarHandle, Props>(function AvtrCar({ paint }, ref) {
   const { rims, wing, glow } = useEquip();
   const { root, wheels, front } = useMemo(() => {
-    const root = buildAvtr(paint);
+    const root = sizeCar(buildAvtr(paint), 5.2);
     const { wheels, front } = collect(root);
     root.updateMatrixWorld(true);
     decorate(root, wheels, rims, wing, glow);

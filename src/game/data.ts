@@ -25,6 +25,7 @@ export type CarDef = {
   tag: string;
   desc: string;
   scale: number;
+  length?: number;
   electric?: boolean;
   elite?: boolean;
   special?: { name: string; desc: string; recharge?: number; magnet?: number; reward?: number; airAssist?: number; traction?: number; boostSeconds?: number };
@@ -90,6 +91,7 @@ export const CARS: CarDef[] = [
     tag: "EPIC",
     desc: "Massive boost, slow spins. Pure chaos on the mega ramp.",
     scale: 1.6,
+    length: 6.2,
     stats: { top: 42, accel: 13, handling: 1.6, boost: 1.8, air: 4.6, landing: 1.3 },
   },
   {
@@ -101,6 +103,7 @@ export const CARS: CarDef[] = [
     electric: true,
     desc: "Battery-powered go-kart. Instant torque and silly-fast spins.",
     scale: 2.1,
+    length: 3.4,
     stats: { top: 41, accel: 24, handling: 2.6, boost: 1.45, air: 7.4, landing: 1.0 },
   },
   {
@@ -113,6 +116,7 @@ export const CARS: CarDef[] = [
     desc: "Silent delivery van with a massive battery. Huge boosts, steady landings.",
     scale: 1.7,
     stats: { top: 44, accel: 21, handling: 1.8, boost: 1.75, air: 5, landing: 1.35 },
+    length: 5.2,
   },
   {
     id: "ecoupe",
