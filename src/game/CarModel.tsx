@@ -214,13 +214,17 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
 
   const { root, wheels, front } = useMemo(() => {
     const root = sizeCar(scene, def.length ?? 4.6);
+    const isBody = (m: THREE.Object3D) => m.name.toLowerCase().startsWith("body") || !!(m.parent && m.parent.name.toLowerCase().startsWith("body"));
+    let hasBody = false;
+    root.traverse((o) => { if ((o as THREE.Mesh).isMesh && isBody(o)) hasBody = true; });
+    const factory: Record<string, string> = { apex: "#36b77c", solaris: "#ff8a00", inferno: "#f43b44", phantom: "#6a2bd9", vortex: "#dcb52f", pulse: "#20c4be", singularity: "#5889e6" };
     root.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
         const mesh = o as THREE.Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        if (mesh.name.startsWith("body") || (mesh.parent && mesh.parent.name.startsWith("body"))) {
-          const factory: Record<string, string> = { apex: "#36b77c", solaris: "#ff8a00", inferno: "#f43b44", phantom: "#e7edf3", vortex: "#dcb52f", pulse: "#20c4be", singularity: "#5889e6" };
+        const isWheel = (() => { let p: THREE.Object3D | null = mesh; while (p) { if (p.name.toLowerCase().startsWith("wheel")) return true; p = p.parent; } return false; })();
+        if (isBody(mesh) || (!hasBody && def.elite && !isWheel)) {
           const finish = (m: THREE.Material) => paintMaterial(m, paint ?? factory[carId] ?? null);
           mesh.material = Array.isArray(mesh.material) ? mesh.material.map(finish) : finish(mesh.material);
         }
