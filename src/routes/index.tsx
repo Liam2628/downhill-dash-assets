@@ -34,7 +34,7 @@ function About() {
           spins and combo tricks like corks and rodeos to earn wheels.
         </p>
         <p className="mt-2 text-sm opacity-80">
-          Spend wheels on new cars — up to the Mercedes Vision AVTR concept — plus tuning upgrades, paint, underglow, rims and
+          Spend wheels on new cars plus tuning upgrades, paint, underglow, rims and
           wings. Open the daily reward chest and complete quests for bonuses.
         </p>
         <p className="mt-4 text-xs opacity-60">Loading the game…</p>

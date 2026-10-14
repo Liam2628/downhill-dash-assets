@@ -262,7 +262,7 @@ function QuestPanel() {
   const best = useQuests((s) => s.best);
   const done = useQuests((s) => s.done);
   return (
-    <div className="pointer-events-none absolute left-4 top-32 w-64 rounded-xl border-2 border-panel-border bg-panel/90 p-3 text-panel-foreground shadow-[var(--shadow-chunky)]">
+    <div className="pointer-events-none absolute right-4 top-32 w-64 rounded-xl border-2 border-panel-border bg-panel/90 p-3 text-panel-foreground shadow-[var(--shadow-chunky)]">
       <div className="mb-2 font-display text-sm text-gold">DAILY QUESTS</div>
       {QUESTS.map((q) => {
         const v = Math.min(q.goal, Math.max(run[q.id], q.id === "combo" ? best[q.id] : run[q.id]));
