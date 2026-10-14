@@ -420,6 +420,27 @@ function FinishPanel() {
   );
 }
 
+function MilestonePanel() {
+  const m = useGame((s) => s.milestone);
+  const setMilestone = useGame((s) => s.setMilestone);
+  if (!m) return null;
+  return (
+    <div className="pointer-events-auto absolute inset-0 flex cursor-pointer items-center justify-center bg-panel/40 backdrop-blur-sm" onClick={() => setMilestone(null)}>
+      <div className="panel animate-scale-in w-[min(440px,92vw)] p-7 text-center">
+        <div className="font-display text-4xl text-gold text-outline">FINISH LINE REACHED!</div>
+        <div className="mt-1 font-display text-hot">1,000 M · KEEP GOING</div>
+        <div className="mt-5 grid grid-cols-2 gap-3 text-left">
+          <Stat label="Time to 1,000 m" value={fmtTime(m.time)} />
+          <Stat label="Tricks landed" value={String(m.tricks)} />
+          <Stat label="Run wheels" value={m.wheels.toLocaleString()} />
+          <Stat label="Finish bonus" value={`+${m.bonus}`} />
+        </div>
+        <div className="mt-6 animate-pulse rounded-xl bg-hot/20 py-3 font-display text-lg text-hot">CLICK ANYWHERE OR PRESS SPACE TO KEEP GOING</div>
+      </div>
+    </div>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-panel-foreground/10 px-3 py-2">
@@ -434,7 +455,8 @@ export function HUD() {
   const settingsOpen = useGame((s) => s.settingsOpen);
   const chestOpen = useGame((s) => s.chestOpen);
   const hideUi = useSave((s) => !!s.settings.hideUi);
-  if (hideUi && !settingsOpen && (mode === "hub" || mode === "run")) return null;
+  const milestone = useGame((s) => !!s.milestone);
+  if (hideUi && !settingsOpen && !milestone && (mode === "hub" || mode === "run")) return null;
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-panel-foreground">
       <SpeedLines />
@@ -454,6 +476,7 @@ export function HUD() {
             </>
           )}
           {mode === "run" && <RunBar />}
+          {mode === "run" && <MilestonePanel />}
           <Hint />
           <Popups />
           {mode === "menu" && (
