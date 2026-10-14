@@ -343,6 +343,8 @@ type GameState = {
   hud: Hud;
   popups: Popup[];
   finish: FinishResult | null;
+  milestone: FinishResult | null;
+  setMilestone: (f: FinishResult | null) => void;
   hint: string | null;
   setMode: (m: Mode) => void;
   openMenu: (m: MenuId) => void;
@@ -379,6 +381,8 @@ export const useGame = create<GameState>()((set, get) => ({
   },
   popups: [],
   finish: null,
+  milestone: null,
+  setMilestone: (f) => set({ milestone: f }),
   hint: null,
   setMode: (m) => set({ mode: m }),
   openMenu: (m) => set({ mode: "menu", menu: m, preview: null }),

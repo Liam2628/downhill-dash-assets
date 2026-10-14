@@ -75,6 +75,11 @@ export function Game() {
         returnToLobby();
         g.popup("BACK TO LOBBY", "cool");
       }
+      if (g.milestone && (e.code === "Space" || e.code === "Enter")) {
+        e.preventDefault();
+        g.setMilestone(null);
+        return;
+      }
       if (e.code === "Space" && !g.settingsOpen && !g.chestOpen && (g.mode === "run" || g.mode === "finished")) {
         e.preventDefault();
         returnToLobby();

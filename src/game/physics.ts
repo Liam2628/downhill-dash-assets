@@ -140,6 +140,7 @@ export function resetRun() {
   splitPB = loadSplitPB();
   splitNow = [];
   P.runTime = 0;
+  finishMilestonePassed = false;
   P.runWheels = 0;
   P.runTricks = 0;
   P.combo = 1;
@@ -185,7 +186,11 @@ export function teleport(x: number, z: number, yaw: number) {
   resetAir();
 }
 
+export const MILESTONE_S = 1000;
+let finishMilestonePassed = false;
+
 export function returnToLobby() {
+  useGame.getState().setMilestone(null);
   teleport(SPAWN.x, SPAWN.z, SPAWN.yaw);
   P.boostT = 0;
   P.cooldownT = 0;
@@ -430,7 +435,7 @@ function stepPhysics(rawDt: number) {
   }
 
   // paused
-  if (game.settingsOpen || game.chestOpen) {
+  if (game.settingsOpen || game.chestOpen || (game.milestone && mode === "run")) {
     audio.engine(0, false, false, P.electric);
     return;
   }
@@ -1014,6 +1019,15 @@ function events(ns: number, mode: string, stats: ReturnType<typeof currentStats>
       }
     }
 
+
+    if (!finishMilestonePassed && P.lastS < MILESTONE_S && ns >= MILESTONE_S) {
+      finishMilestonePassed = true;
+      const time = P.runTime;
+      const bonus = 50 + Math.max(0, Math.round((90 - time) * 3));
+      award(bonus);
+      audio.play("finish");
+      game.setMilestone({ time, wheels: P.runWheels, tricks: P.runTricks, bestCombo: P.bestCombo, isBest: false, bonus });
+    }
 
     if (ns >= FINISH) {
       const time = P.runTime;
