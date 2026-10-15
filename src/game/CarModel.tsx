@@ -9,7 +9,7 @@ export type CarHandle = { wheels: THREE.Object3D[]; front: THREE.Object3D[] };
 
 type Props = { carId: string; paint: string | null };
 
-function paintMaterial(src: THREE.Material, paint: string | null) {
+function paintMaterial(src: THREE.Material, paint: string | null, light = false) {
   const m = (src as THREE.MeshStandardMaterial).clone();
   m.metalness = 0.25;
   m.roughness = 0.45;
@@ -29,12 +29,14 @@ function paintMaterial(src: THREE.Material, paint: string | null) {
           float mn = min(min(c.r, c.g), c.b);
           float sat = mx > 0.001 ? (mx - mn) / mx : 0.0;
           float l = dot(c, vec3(0.299, 0.587, 0.114));
-          float m = smoothstep(0.35, 0.55, sat) * uPaintAmt;
-          diffuseColor.rgb = mix(c, uPaint * (0.45 + l * 1.4), m);
+          float m = smoothstep(0.35, 0.55, sat);
+          ${light ? "m = max(m, smoothstep(0.55, 0.75, l) * (1.0 - smoothstep(0.15, 0.35, sat)));" : ""}
+          m *= uPaintAmt;
+          diffuseColor.rgb = mix(c, uPaint * ${light ? "(0.2 + l * 0.45)" : "(0.45 + l * 1.4)"}, m);
         }`,
       );
   };
-  m.customProgramCacheKey = () => "paint";
+  m.customProgramCacheKey = () => (light ? "paint-light" : "paint");
   return m;
 }
 
@@ -202,7 +204,7 @@ function dispose(root: THREE.Object3D) {
       p = p.parent;
     }
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) if (equip || material.customProgramCacheKey?.() === "paint") material.dispose();
+    for (const material of materials) if (equip || material.customProgramCacheKey?.().startsWith("paint")) material.dispose();
     if (equip) mesh.geometry.dispose();
   });
 }
@@ -217,7 +219,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
     const isBody = (m: THREE.Object3D) => m.name.toLowerCase().startsWith("body") || !!(m.parent && m.parent.name.toLowerCase().startsWith("body"));
     let hasBody = false;
     root.traverse((o) => { if ((o as THREE.Mesh).isMesh && isBody(o)) hasBody = true; });
-    const factory: Record<string, string> = { apex: "#36b77c", solaris: "#ff8a00", inferno: "#f43b44", phantom: "#6a2bd9", vortex: "#dcb52f", pulse: "#20c4be", singularity: "#5889e6" };
+    const factory: Record<string, string> = { apex: "#36b77c", solaris: "#ff8a00", inferno: "#f43b44", phantom: "#6a2bd9", vortex: "#e0a800", pulse: "#20c4be", singularity: "#2f6fe0" };
     root.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
         const mesh = o as THREE.Mesh;
@@ -225,7 +227,7 @@ const GltfCar = forwardRef<CarHandle, Props>(function GltfCar({ carId, paint }, 
         mesh.receiveShadow = true;
         const isWheel = (() => { let p: THREE.Object3D | null = mesh; while (p) { if (p.name.toLowerCase().startsWith("wheel")) return true; p = p.parent; } return false; })();
         if (isBody(mesh) || (!hasBody && def.elite && !isWheel)) {
-          const finish = (m: THREE.Material) => paintMaterial(m, paint ?? factory[carId] ?? null);
+          const finish = (m: THREE.Material) => paintMaterial(m, paint ?? factory[carId] ?? null, carId === "vortex" || carId === "singularity");
           mesh.material = Array.isArray(mesh.material) ? mesh.material.map(finish) : finish(mesh.material);
         }
       }
