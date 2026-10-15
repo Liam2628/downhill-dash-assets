@@ -50,3 +50,5 @@
 - [x] Hills shrink gradually near lobby (not too early)
 - [x] Finish Phase 3 Session 3 (long-run verification)
 - [x] Settings option to hide all UI during runs
+- [ ] Accounts: username/password + optional email, Google, cloud save; pop up after 3 min play when signed out; account section in Settings
+- [ ] Sign-in option on the title (landing) screen

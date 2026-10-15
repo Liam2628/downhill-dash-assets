@@ -62,7 +62,7 @@ const CAR_IDS = new Set(CARS.map((c) => c.id));
 const clampInt = (n: unknown, min: number, max: number, fallback: number) =>
   typeof n === "number" && Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : fallback;
 
-function sanitizeSave(p: Partial<Save>): Partial<Save> {
+export function sanitizeSave(p: Partial<Save>): Partial<Save> {
   const out: Partial<Save> = { ...p };
   out.wheels = clampInt(p.wheels, 0, Number.MAX_SAFE_INTEGER, 0);
   out.xp = clampInt(p.xp, 0, Number.MAX_SAFE_INTEGER, 0);
@@ -113,7 +113,7 @@ export const DEFAULT_KEYS: KeyBinds = {
   level: ["KeyF"],
 };
 
-type Save = {
+export type Save = {
   wheels: number;
   xp: number;
   owned: string[];

@@ -1,3 +1,4 @@
+import { AccountPrompt, TitleAccount } from "./Account";
 import { useEffect, useRef, useState } from "react";
 import { QUESTS, useQuests } from "../quests";
 import { useGame, useSave } from "../store";
@@ -380,6 +381,7 @@ function TitleScreen() {
       <button className="btn-game btn-hot mt-8 px-10 py-4 text-3xl" onClick={start}>
         PLAY
       </button>
+      <TitleAccount />
       {(wheels > 0 || runs > 0) && (
         <div className="mt-4 flex items-center gap-2 font-display text-panel-foreground text-outline">
           Welcome back · <WheelIcon className="h-5 w-5" /> {wheels.toLocaleString()}
@@ -496,6 +498,7 @@ export function HUD() {
           <DailyChest />
         </div>
       )}
+      <AccountPrompt />
       {settingsOpen && (
         <div className="pointer-events-auto">
           <SettingsModal />

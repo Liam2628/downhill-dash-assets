@@ -10,6 +10,7 @@ import { useGame, useSave } from "./store";
 import { audio } from "./audio";
 import { exitMenu, returnToLobby } from "./physics";
 import { LobbyMusic } from "./lobbyMusic";
+import { startAccount } from "./account";
 
 export function Game() {
   const [fontsReady, setFontsReady] = useState(false);
@@ -31,6 +32,7 @@ export function Game() {
   }, []);
 
   useEffect(() => bindInput(), []);
+  useEffect(() => startAccount(), []);
   useEffect(() => audio.setVolume(volume, muted), [volume, muted]);
 
   useEffect(() => {
