@@ -117,3 +117,15 @@ export function AccountPrompt() {
     </div>
   );
 }
+
+export function TitleAccount() {
+  const { ready, userId, username } = useAccount();
+  const setOpen = useAccount((s) => s.setPromptOpen);
+  if (!ready) return null;
+  if (userId) return <div className="mt-3 font-display text-panel-foreground text-outline">Signed in as {username ?? "player"}</div>;
+  return (
+    <button className="btn-game btn-ghost mt-3 px-6 py-2" onClick={(e) => { e.stopPropagation(); setOpen(true); }}>
+      SIGN IN / CREATE ACCOUNT
+    </button>
+  );
+}
