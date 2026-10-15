@@ -30,7 +30,7 @@ function AuthForm() {
         ? await signUpPlayer({ data: { username, password, email } })
         : await signInPlayer({ data: { username, password } });
       if ("error" in r && r.error) return setMsg(r.error);
-      if ("access_token" in r) await supabase.auth.setSession({ access_token: r.access_token, refresh_token: r.refresh_token });
+      if ("access_token" in r) await supabase.auth.setSession({ access_token: r.access_token!, refresh_token: r.refresh_token! });
     } catch (err) {
       const m = err instanceof Error ? err.message : "";
       setMsg(m.includes("Username must") ? "Username must be 3–20 letters, numbers or _" : m.includes("8 characters") ? "Password must be at least 8 characters" : m.includes("email") ? "That email doesn't look right" : "Something went wrong, try again");
