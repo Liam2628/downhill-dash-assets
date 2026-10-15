@@ -1,3 +1,4 @@
+import { AccountPrompt } from "./Account";
 import { useEffect, useRef, useState } from "react";
 import { QUESTS, useQuests } from "../quests";
 import { useGame, useSave } from "../store";
@@ -496,6 +497,7 @@ export function HUD() {
           <DailyChest />
         </div>
       )}
+      <AccountPrompt />
       {settingsOpen && (
         <div className="pointer-events-auto">
           <SettingsModal />

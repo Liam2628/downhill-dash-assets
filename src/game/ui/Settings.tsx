@@ -1,3 +1,4 @@
+import { AccountSection } from "./Account";
 import { useEffect, useRef, useState } from "react";
 import { keyLabel, rebinding } from "../input";
 import { DEFAULT_KEYS, type Action } from "../store";
@@ -137,7 +138,7 @@ export function SettingsModal() {
   const close = useGame((st) => st.setSettingsOpen);
   const mode = useGame((st) => st.mode);
   const [confirm, setConfirm] = useState(false);
-  const [tab, setTab] = useState<"general" | "controls" | "codes">("general");
+  const [tab, setTab] = useState<"general" | "controls" | "codes" | "account">("general");
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-panel/40" onClick={() => close(false)}>
@@ -149,7 +150,7 @@ export function SettingsModal() {
           </button>
         </div>
         <div className="mb-2 flex gap-2">
-          {(["general", "controls", "codes"] as const).map((t) => (
+          {(["general", "controls", "codes", "account"] as const).map((t) => (
             <button
               key={t}
               className={`flex-1 rounded-xl py-2 font-display text-sm ${tab === t ? "bg-hot text-primary-foreground" : "bg-panel-foreground/10"}`}
@@ -158,7 +159,7 @@ export function SettingsModal() {
                 setTab(t);
               }}
             >
-              {t === "general" ? "GENERAL" : t === "controls" ? "CONTROLS" : "CODES"}
+              {t === "general" ? "GENERAL" : t === "controls" ? "CONTROLS" : t === "codes" ? "CODES" : "ACCOUNT"}
             </button>
           ))}
         </div>
@@ -166,6 +167,8 @@ export function SettingsModal() {
           <ControlsSection />
         ) : tab === "codes" ? (
           <CodesSection />
+        ) : tab === "account" ? (
+          <AccountSection />
         ) : (
         <div className="divide-y divide-panel-foreground/10">
           <Row label="Volume">
