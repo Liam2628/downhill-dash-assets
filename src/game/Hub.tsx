@@ -219,7 +219,7 @@ function Showcase() {
   });
   const selected = useSave((s) => s.selected);
   const paint = useSave((s) => s.paints[s.selected] ?? null);
-  const avtrPaint = useSave((s) => s.paints.avtr ?? null);
+  const avtrPaint = useSave((s) => s.paints["avtr"] ?? null);
   return (
     <>
       <group ref={ref} position={[0, 0.4, -4]}>
