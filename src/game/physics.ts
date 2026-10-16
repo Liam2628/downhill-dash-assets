@@ -27,7 +27,7 @@ import {
   solidY,
   type Loop,
 } from "./track";
-import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
+import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, TEST_BOUNDS, TEST_TRACK, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
 import { k, doubleTap, keys } from "./input";
 import { TrickTracker } from "./tricks";
 import { QUESTS, SPLITS, loadSplitPB, questProgress, questsNewRun, saveSplitPB } from "./quests";
@@ -191,6 +191,7 @@ let finishMilestonePassed = false;
 
 export function returnToLobby() {
   useGame.getState().setMilestone(null);
+  useGame.getState().setTestCar(null);
   teleport(SPAWN.x, SPAWN.z, SPAWN.yaw);
   P.boostT = 0;
   P.cooldownT = 0;
@@ -198,6 +199,31 @@ export function returnToLobby() {
   const g = useGame.getState();
   g.setFinish(null);
   g.setMode("hub");
+}
+
+export function startTestDrive(id: string) {
+  const g = useGame.getState();
+  g.closeMenu();
+  g.setTestCar(id);
+  teleport(TEST_TRACK.x, TEST_TRACK.z - TEST_TRACK.rz, Math.PI / 2);
+  P.speed = 0;
+  P.boostT = 0;
+  P.cooldownT = 0;
+  P.snapCam = true;
+  g.popup("TEST DRIVE", "cool", "Practice track · Esc to finish");
+}
+
+export function endTestDrive() {
+  const g = useGame.getState();
+  const id = g.testCar;
+  if (!id) return;
+  g.setTestCar(null);
+  const b = HUB_BUILDINGS.find((h) => h.id === "dealer")!;
+  P.speed = 0;
+  teleport(b.trigger.x, b.trigger.z, b.exit.yaw + Math.PI);
+  P.snapCam = true;
+  g.openMenu("dealer");
+  g.setPreview(id);
 }
 
 export function exitMenu() {
@@ -215,7 +241,7 @@ function gravityScale() {
 
 export function currentStats() {
   const s = useSave.getState();
-  const def = carById(s.selected);
+  const def = carById(useGame.getState().testCar ?? s.selected);
   const base: CarStats = def.stats;
   const u = def.elite ? { engine: 5, nitro: 5, cooler: 5, grip: 5, magnet: 5, suspension: 5, aero: 5 } : s.upgrades;
   const special = def.special;
@@ -452,7 +478,8 @@ function stepPhysics(rawDt: number) {
   if (![P.x, P.y, P.z, P.speed, P.lateral].every(Number.isFinite) ||
       P.y < hAt(Math.max(0, sNow)) - 18 ||
       (P.z <= 0 && (Math.abs(P.x - cAt(sNow)) > HALF + 35)) ||
-      (P.z > 0 && (Math.abs(P.x) > 100 || P.z > HUB_BOUNDS.maxZ + 30))) {
+      (P.z > 0 && !game.testCar && (Math.abs(P.x) > 100 || P.z > HUB_BOUNDS.maxZ + 30)) ||
+      (game.testCar && (P.x < TEST_BOUNDS.minX - 20 || P.x > TEST_BOUNDS.maxX + 20 || P.z < TEST_BOUNDS.minZ - 20 || P.z > TEST_BOUNDS.maxZ + 20))) {
     returnToLobby();
     game.popup("BACK ON TRACK", "cool");
     return;
@@ -612,7 +639,15 @@ function stepPhysics(rawDt: number) {
   }
   P.wallT -= dt;
 
-  if (nz > 0) {
+  if (game.testCar) {
+    // ---- TEST TRACK (fenced, never leads to the run) ----
+    const B = TEST_BOUNDS;
+    if (nx < B.minX || nx > B.maxX || nz < B.minZ || nz > B.maxZ) {
+      if (Math.abs(P.speed) > 12) impact("wood", Math.abs(P.speed), "Smashed the fence");
+      nx = Math.max(B.minX, Math.min(B.maxX, nx));
+      nz = Math.max(B.minZ, Math.min(B.maxZ, nz));
+    }
+  } else if (nz > 0) {
     // ---- HUB ----
     if (nx < HUB_BOUNDS.minX || nx > HUB_BOUNDS.maxX || nz > HUB_BOUNDS.maxZ) {
       if (Math.abs(P.speed) > 12) impact("wood", Math.abs(P.speed), "Smashed the fence");
@@ -917,6 +952,10 @@ function collectCoins(radius: number) {
 }
 
 function events(ns: number, mode: string, stats: ReturnType<typeof currentStats>, game: ReturnType<typeof useGame.getState>) {
+  if (mode === "hub" && game.testCar) {
+    game.setHint("TEST DRIVE · Press Esc to finish");
+    return;
+  }
   if (mode === "hub") {
     let hint: string | null = null;
     for (const b of HUB_BUILDINGS) {

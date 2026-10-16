@@ -34,7 +34,8 @@ export function Player() {
   const paints = useSave((s) => s.paints);
   const glow = useSave((s) => s.glow);
   const trail = useSave((s) => s.trail);
-  const carId = mode === "menu" && menu === "dealer" && preview ? preview : selected;
+  const testCar = useGame((s) => s.testCar);
+  const carId = testCar ? testCar : mode === "menu" && menu === "dealer" && preview ? preview : selected;
   const paint = paints[carId] ?? null;
 
   useFrame((state, rawDt) => {

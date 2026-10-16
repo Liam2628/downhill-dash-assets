@@ -8,7 +8,7 @@ import { HUD } from "./ui/HUD";
 import { bindInput, orbit, rebinding } from "./input";
 import { useGame, useSave } from "./store";
 import { audio } from "./audio";
-import { exitMenu, returnToLobby } from "./physics";
+import { endTestDrive, exitMenu, returnToLobby } from "./physics";
 import { LobbyMusic } from "./lobbyMusic";
 import { startAccount } from "./account";
 
@@ -71,6 +71,7 @@ export function Game() {
         }
         if (g.settingsOpen) g.setSettingsOpen(false);
         else if (g.mode === "menu") exitMenu();
+        else if (g.testCar) endTestDrive();
         else if (g.mode !== "title") g.setSettingsOpen(true);
       }
       if (e.code === "KeyR" && (g.mode === "run" || g.mode === "hub") && !g.settingsOpen && !g.chestOpen && !rebinding.active) {
