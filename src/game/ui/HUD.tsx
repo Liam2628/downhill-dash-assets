@@ -7,7 +7,7 @@ import { returnToLobby } from "../physics";
 import { WheelIcon } from "./WheelIcon";
 import { MenuPanel } from "./Menus";
 import { SettingsModal } from "./Settings";
-import { Settings2, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { Settings2, ShoppingCart, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { keyLabel, virtual } from "../input";
 import type { Action } from "../store";
 import { DailyChest } from "./DailyChest";
@@ -70,6 +70,16 @@ function TopBar() {
         {showFps && <div className="hud-chip px-2 py-1 font-mono text-xs">{fps} FPS</div>}
       </div>
       <div className="pointer-events-auto flex gap-2">
+        <button
+          aria-label="Shop"
+          className="hud-chip p-2.5"
+          onClick={() => {
+            audio.play("ui");
+            useGame.getState().openMenu("tuning");
+          }}
+        >
+          <ShoppingCart className="h-5 w-5" />
+        </button>
         <button
           aria-label={muted ? "Unmute" : "Mute"}
           className="hud-chip p-2.5"
