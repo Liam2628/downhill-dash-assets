@@ -543,6 +543,7 @@ export function Hub() {
         </group>
       ))}
       <Fence />
+      <TestTrack />
       <Gate />
       <Trees />
 
