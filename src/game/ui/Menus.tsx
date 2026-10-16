@@ -3,7 +3,7 @@ import { Check, Lock, X } from "lucide-react";
 import { useGame, useSave } from "../store";
 import { CARS, EQUIPMENT, GLOWS, GLOW_UNLOCK, PAINTS, TRAIL_UNLOCK, UPGRADES, carById, type CarStats } from "../data";
 import { audio } from "../audio";
-import { exitMenu } from "../physics";
+import { exitMenu, startTestDrive } from "../physics";
 import { WheelIcon } from "./WheelIcon";
 
 function Price({ n }: { n: number }) {
@@ -182,7 +182,7 @@ function Unlock({ what, price, onBuy }: { what: string; price: number; onBuy: ()
 function Dealer() {
   const s = useSave();
   const setPreview = useGame((g) => g.setPreview);
-  const [idx, setIdx] = useState(Math.max(0, CARS.findIndex((c) => c.id === s.selected)));
+  const [idx, setIdx] = useState(Math.max(0, CARS.findIndex((c) => c.id === (useGame.getState().preview ?? s.selected))));
   const car = CARS[idx];
   useEffect(() => {
     setPreview(car.id);
@@ -227,6 +227,12 @@ function Dealer() {
             BUY · <Price n={car.price} />
           </button>
         )}
+        <button
+          className="btn-game btn-ghost mt-2 w-full py-2"
+          onClick={() => { audio.play("ui"); startTestDrive(car.id); }}
+        >
+          TEST DRIVE (PRACTICE TRACK)
+        </button>
         {!owned && s.wheels < car.price && (
           <p className="mt-2 text-center text-xs opacity-70">You need {(car.price - s.wheels).toLocaleString()} more wheels</p>
         )}

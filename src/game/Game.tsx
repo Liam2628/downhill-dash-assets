@@ -8,7 +8,7 @@ import { HUD } from "./ui/HUD";
 import { bindInput, orbit, rebinding } from "./input";
 import { useGame, useSave } from "./store";
 import { audio } from "./audio";
-import { exitMenu, returnToLobby } from "./physics";
+import { endTestDrive, exitMenu, returnToLobby } from "./physics";
 import { LobbyMusic } from "./lobbyMusic";
 import { startAccount } from "./account";
 
