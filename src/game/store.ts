@@ -337,6 +337,8 @@ type GameState = {
   mode: Mode;
   menu: MenuId | null;
   preview: string | null;
+  testCar: string | null;
+  setTestCar: (id: string | null) => void;
   settingsOpen: boolean;
   chestOpen: boolean;
   setChestOpen: (v: boolean) => void;
@@ -364,6 +366,8 @@ export const useGame = create<GameState>()((set, get) => ({
   mode: "title",
   menu: null,
   preview: null,
+  testCar: null,
+  setTestCar: (id) => set({ testCar: id }),
   settingsOpen: false,
   chestOpen: false,
   setChestOpen: (v) => set({ chestOpen: v }),
