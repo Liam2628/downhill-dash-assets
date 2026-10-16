@@ -39,13 +39,21 @@ function AuthForm() {
     }
   };
 
-  const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) setMsg("Google sign-in didn't work, try again");
+  const oauth = async (provider: "google" | "apple") => {
+    const r = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
+    if (r.error) setMsg(`${provider === "google" ? "Google" : "Apple"} sign-in didn't work, try again`);
   };
 
   return (
     <div className="space-y-3" onKeyDown={stop} onKeyUp={stop}>
+      {mode !== "forgot" && (
+        <div className="text-center">
+          <div className="font-display text-xl text-gold">{mode === "up" ? "CREATE ACCOUNT" : "WELCOME BACK"}</div>
+          <p className="text-xs opacity-70">
+            {mode === "up" ? "Sign up to save your cars, wheels and upgrades." : "Log in to load your saved cars, wheels and upgrades."}
+          </p>
+        </div>
+      )}
       <form className="space-y-2" onSubmit={submit}>
         <input className={input} placeholder={mode === "up" ? "Username" : "Username or email"} autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
         {mode !== "forgot" && (
@@ -59,15 +67,18 @@ function AuthForm() {
         )}
         {msg && <p className="text-sm text-gold">{msg}</p>}
         <button className="btn-game w-full" disabled={busy}>
-          {busy ? "..." : mode === "up" ? "CREATE ACCOUNT" : mode === "in" ? "SIGN IN" : "SEND RESET LINK"}
+          {busy ? "..." : mode === "up" ? "SIGN UP" : mode === "in" ? "LOG IN" : "SEND RESET LINK"}
         </button>
       </form>
       {mode !== "forgot" && (
-        <button className="btn-game btn-ghost w-full" onClick={google}>CONTINUE WITH GOOGLE</button>
+        <>
+          <button className="btn-game btn-ghost w-full" onClick={() => void oauth("google")}>CONTINUE WITH GOOGLE</button>
+          <button className="btn-game btn-ghost w-full" onClick={() => void oauth("apple")}>CONTINUE WITH APPLE</button>
+        </>
       )}
       <div className="flex justify-between text-sm">
         <button className="underline opacity-80" onClick={() => { setMode(mode === "up" ? "in" : "up"); setMsg(null); }}>
-          {mode === "up" ? "Have an account? Sign in" : "New? Create account"}
+          {mode === "up" ? "Already have an account? Log in" : "Need an account? Sign up"}
         </button>
         {mode === "in" && <button className="underline opacity-80" onClick={() => { setMode("forgot"); setMsg(null); }}>Forgot password?</button>}
         {mode === "forgot" && <button className="underline opacity-80" onClick={() => setMode("in")}>Back</button>}
@@ -112,7 +123,6 @@ export function AccountPrompt() {
         </div>
         <p className="mb-3 text-sm opacity-80">Make a free account so you never lose your wheels and cars.</p>
         <AuthForm />
-        <button className="mt-3 w-full text-sm underline opacity-70" onClick={() => setOpen(false)}>Keep playing as guest</button>
       </div>
     </div>
   );
@@ -125,7 +135,7 @@ export function TitleAccount() {
   if (userId) return <div className="mt-3 font-display text-panel-foreground text-outline">Signed in as {username ?? "player"}</div>;
   return (
     <button className="btn-game btn-ghost mt-3 px-6 py-2" onClick={(e) => { e.stopPropagation(); setOpen(true); }}>
-      SIGN IN / CREATE ACCOUNT
+      LOG IN / SIGN UP
     </button>
   );
 }
