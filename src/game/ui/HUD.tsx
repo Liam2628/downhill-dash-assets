@@ -397,9 +397,7 @@ function TitleScreen() {
           Welcome back · <WheelIcon className="h-5 w-5" /> {wheels.toLocaleString()}
         </div>
       )}
-      <div className="absolute bottom-4 text-xs text-panel-foreground/80 text-outline">
-        Car models by Kenney (CC0) · Best with keyboard
-      </div>
+      <div className="absolute bottom-4 text-xs text-panel-foreground/80 text-outline">Best with keyboard</div>
     </div>
   );
 }
