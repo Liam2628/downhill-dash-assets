@@ -1,4 +1,8 @@
 # Roadmap
+- [ ] Premium shop: distinct blue truck at reference location, dedicated shop/cart link, three item pictures and rotatable models
+- [ ] Improve vehicle practice area; add isolated item trials, magnet and once-per-run safe airbag effect; remove loop pillars; fix Mac screenshot boost
+- [ ] Payments: enable built-in Stripe if available, secure entitlements and subscription lifecycle; otherwise document blocker without fake purchases
+- [ ] Verify shop/trials in live game and relevant regression tests
 - [ ] Finish car visuals: full-sized elite cars, distinct silhouettes, AVTR polish, automated and live dealership/driving checks
 - [x] Add eight max-stat elite cars above Hyperion X, with special abilities and a 500,000-wheel Mercedes Vision AVTR
 - [x] Expanded tricks: many flip/roll/spin variants, mid-rotation transitions count, chains/combos, no double counting, extensible registry
