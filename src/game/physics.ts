@@ -699,6 +699,15 @@ function stepPhysics(rawDt: number) {
       nx = Math.max(B.minX, Math.min(B.maxX, nx));
       nz = Math.max(B.minZ, Math.min(B.maxZ, nz));
     }
+    // Airbag trial crash wall: solid, and hitting it triggers the rescue.
+    if (game.trial === "airbag") {
+      const w = TRIAL_WALL;
+      if (Math.abs(nx - w.x) < w.w / 2 + 1 && nz < w.z + 1.2 && nz > w.z - 1.2) {
+        nz = w.z + 1.2;
+        if (airbagArmed() && Math.abs(P.speed) > 8) deployAirbag();
+        else impact("concrete", Math.abs(P.speed), "Hit the crash wall");
+      }
+    }
   } else if (nz > 0) {
     // ---- HUB ----
     if (nx < HUB_BOUNDS.minX || nx > HUB_BOUNDS.maxX || nz > HUB_BOUNDS.maxZ) {
@@ -857,6 +866,7 @@ function stepPhysics(rawDt: number) {
   }
 
   stepCones(dt);
+  stepTrial(dt);
   const ns = -P.z;
   // Stuck at a loop for 3s+: put the car back on clear road before it.
   const nearLoop = LOOPS.find((l) => Math.abs(ns - l.s) < 30);
