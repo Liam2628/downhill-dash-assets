@@ -27,7 +27,8 @@ import {
   solidY,
   type Loop,
 } from "./track";
-import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, TEST_BOUNDS, TEST_TRACK, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
+import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, SHOP_TRIGGER, TEST_BOUNDS, TEST_TRACK, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
+import { TRIAL, TRIAL_WALL, trialCoins as makeTrialCoins } from "./shop";
 import { k, doubleTap, keys } from "./input";
 import { TrickTracker } from "./tricks";
 import { QUESTS, SPLITS, loadSplitPB, questProgress, questsNewRun, saveSplitPB } from "./quests";
@@ -217,13 +218,78 @@ export function endTestDrive() {
   const g = useGame.getState();
   const id = g.testCar;
   if (!id) return;
+  const trial = g.trial;
   g.setTestCar(null);
-  const b = HUB_BUILDINGS.find((h) => h.id === "dealer")!;
+  g.setTrial(null);
+  trialCoins.length = 0;
+  airbagUsed = false;
   P.speed = 0;
+  if (trial) {
+    teleport(SHOP_TRIGGER.x, SHOP_TRIGGER.z + 6, Math.PI);
+    P.snapCam = true;
+    g.openMenu("shop");
+    return;
+  }
+  const b = HUB_BUILDINGS.find((h) => h.id === "dealer")!;
   teleport(b.trigger.x, b.trigger.z, b.exit.yaw + Math.PI);
   P.snapCam = true;
   g.openMenu("dealer");
   g.setPreview(id);
+}
+
+// --- Premium item trials (isolated, never grant ownership or real coins) ---
+export type TrialCoin = { x: number; y: number; z: number; taken: number; pull: number };
+export const trialCoins: TrialCoin[] = [];
+let airbagUsed = false;
+export const airbagState = { get used() { return airbagUsed; } };
+
+export function startTrial(item: "magnet" | "airbag") {
+  const g = useGame.getState();
+  g.closeMenu();
+  g.setTestCar(useSave.getState().selected);
+  g.setTrial(item);
+  trialCoins.length = 0;
+  if (item === "magnet") {
+    for (const c of makeTrialCoins()) trialCoins.push({ x: c.x, y: 0.9, z: c.z, taken: 0, pull: 0 });
+    teleport(TRIAL.x, TRIAL.z, Math.PI / 2);
+    g.popup("MAGNET TRIAL", "cool", "Coins zip to you · trial coins are worth nothing");
+  } else {
+    airbagUsed = false;
+    teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
+    g.popup("AIRBAG TRIAL", "cool", "Drive into the crash wall ahead!");
+  }
+  P.speed = 0;
+  P.boostT = 0;
+  P.cooldownT = 0;
+  P.snapCam = true;
+}
+
+/** Airbag rescue: one save per run/trial, lands the car on verified clear road. */
+function deployAirbag() {
+  airbagUsed = true;
+  audio.play("pad");
+  audio.play("coin");
+  const g = useGame.getState();
+  if (g.trial === "airbag") {
+    teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
+    g.popup("AIRBAG DEPLOYED!", "cool", "Saved from the crash · one use per run");
+  } else {
+    const s = Math.max(0, -P.z);
+    const rs = s + 5;
+    P.x = cAt(rs); P.z = -rs; P.y = hAt(rs) + 0.2;
+    P.yaw = roadYaw(rs); P.speed = 0; P.vy = 0; P.lateral = 0;
+    P.pitch = 0; P.roll = 0; P.grounded = true; P.loop = null; P.snapCam = true;
+    g.popup("AIRBAG DEPLOYED!", "cool", "Back on clear road · one use per run");
+  }
+  P.wipe = 0;
+  P.wipeSpin = 0;
+  resetAir();
+}
+
+/** True when the premium airbag is available this run (owned, or on trial). */
+function airbagArmed() {
+  const g = useGame.getState();
+  return g.trial === "airbag" && !airbagUsed;
 }
 
 export function exitMenu() {
