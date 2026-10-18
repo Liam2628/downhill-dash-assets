@@ -2,7 +2,10 @@ import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { Clone, useGLTF } from "@react-three/drei";
 import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { DAILY_PAD, GATE_HALF, HUB_BUILDINGS, STATS_BOARD, TEST_BOUNDS, TEST_TRACK, type HubBuilding } from "./hub";
+import { DAILY_PAD, GATE_HALF, HUB_BUILDINGS, SHOP_TRUCK, STATS_BOARD, TEST_BOUNDS, TEST_TRACK, type HubBuilding } from "./hub";
+import { TRIAL, TRIAL_WALL } from "./shop";
+import { trialCoins } from "./physics";
+import { useGame } from "./store";
 import { CarModel } from "./CarModel";
 import {
   boardTexture,
@@ -544,6 +547,8 @@ export function Hub() {
       ))}
       <Fence />
       <TestTrack />
+      <TrialProps />
+      <ShopTruck />
       <Gate />
       <Trees />
 
