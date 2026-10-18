@@ -371,22 +371,9 @@ let fpsFrames = 0;
 let fps = 0;
 let dailyArmed = true;
 
-/** car footprint sample points (relative to center): front corners, front, rear corners */
-const FOOT: [number, number][] = [
-  [2.0, 0],
-  [1.9, 0.85],
-  [1.9, -0.85],
-  [-1.9, 0.85],
-  [-1.9, -0.85],
-];
-
-function footprintBlocked(x: number, z: number, yaw: number, y: number) {
-  for (const [f, r] of FOOT) {
-    const px = x + Math.sin(yaw) * f + Math.cos(yaw) * r;
-    const pz = z + Math.cos(yaw) * f - Math.sin(yaw) * r;
-    // Loop support pillars were removed; decks remain fully collidable.
-  }
-  return null;
+/** Loop support pillars were removed; nothing else blocks the footprint, so this stays false. */
+function footprintBlocked(_x: number, _z: number, _yaw: number, _y: number) {
+  return null as string | null;
 }
 
 // Bounded substeps keep narrow decks, barrier noses and supports from being skipped.
