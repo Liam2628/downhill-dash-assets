@@ -887,6 +887,32 @@ function stepPhysics(rawDt: number) {
 }
 
 let loopStuckT = 0;
+
+/** Magnet trial: coins visibly accelerate toward the car and pop on contact. */
+function stepTrial(dt: number) {
+  const g = useGame.getState();
+  if (g.trial !== "magnet" || !g.testCar) return;
+  const R = 20;
+  for (const c of trialCoins) {
+    if (c.taken) continue;
+    const dx = P.x - c.x;
+    const dz = P.z - c.z;
+    const d = Math.hypot(dx, dz);
+    if (d < R) {
+      c.pull = Math.min(1, c.pull + dt * 1.6);
+      const v = 6 + c.pull * 26;
+      c.x += (dx / (d || 1)) * v * dt;
+      c.z += (dz / (d || 1)) * v * dt;
+      c.y += ((P.y + 0.9) - c.y) * (1 - Math.exp(-8 * dt));
+      if (d < 1.6) {
+        c.taken = 1;
+        audio.play("coin");
+        g.popup("MAGNET!", "cool", "Trial coin — worth 0 wheels");
+      }
+    }
+  }
+}
+
 function stepCones(dt: number) {
   const cones = runState.cones;
   const vx = Math.sin(P.yaw) * P.speed;
