@@ -307,7 +307,7 @@ export const useSave = create<Save & SaveActions>()(
 );
 
 export type Mode = "title" | "hub" | "run" | "menu" | "finished";
-export type MenuId = "garage" | "dealer" | "tuning";
+export type MenuId = "garage" | "dealer" | "tuning" | "shop";
 
 export type Popup = { id: number; text: string; sub?: string; tone: "gold" | "hot" | "cool" | "bad" };
 

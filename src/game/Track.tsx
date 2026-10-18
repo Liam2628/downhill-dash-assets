@@ -44,7 +44,6 @@ import {
   signTexture,
   windowsTexture,
   grassTexture,
-  stoneTexture,
 } from "./textures";
 import { runState, P } from "./physics";
 

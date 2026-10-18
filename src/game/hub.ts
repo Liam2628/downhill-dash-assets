@@ -41,6 +41,10 @@ export const HUB_BUILDINGS: HubBuilding[] = [
 ];
 
 export const SPAWN = { x: 0, z: 46, yaw: Math.PI };
+
+/** Blue shop truck parked beside the spawn, right of the gate lane. */
+export const SHOP_TRUCK = { x: 16, z: 44, rotY: -0.5 };
+export const SHOP_TRIGGER = { x: 16, z: 44, hx: 4.5, hz: 4.5 };
 export const HUB_BOUNDS = { minX: -68, maxX: 68, minZ: 0, maxZ: 98 };
 export const DAILY_PAD = { x: -18, z: 62, r: 3.2 };
 export const STATS_BOARD = { x: 20, z: 64 };
