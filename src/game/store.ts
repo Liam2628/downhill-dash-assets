@@ -307,7 +307,7 @@ export const useSave = create<Save & SaveActions>()(
 );
 
 export type Mode = "title" | "hub" | "run" | "menu" | "finished";
-export type MenuId = "garage" | "dealer" | "tuning";
+export type MenuId = "garage" | "dealer" | "tuning" | "shop";
 
 export type Popup = { id: number; text: string; sub?: string; tone: "gold" | "hot" | "cool" | "bad" };
 
@@ -339,6 +339,8 @@ type GameState = {
   preview: string | null;
   testCar: string | null;
   setTestCar: (id: string | null) => void;
+  trial: "magnet" | "airbag" | null;
+  setTrial: (t: "magnet" | "airbag" | null) => void;
   settingsOpen: boolean;
   chestOpen: boolean;
   setChestOpen: (v: boolean) => void;
@@ -368,6 +370,8 @@ export const useGame = create<GameState>()((set, get) => ({
   preview: null,
   testCar: null,
   setTestCar: (id) => set({ testCar: id }),
+  trial: null,
+  setTrial: (t) => set({ trial: t }),
   settingsOpen: false,
   chestOpen: false,
   setChestOpen: (v) => set({ chestOpen: v }),

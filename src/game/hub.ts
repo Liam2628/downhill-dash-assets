@@ -41,6 +41,10 @@ export const HUB_BUILDINGS: HubBuilding[] = [
 ];
 
 export const SPAWN = { x: 0, z: 46, yaw: Math.PI };
+
+/** Blue shop truck parked beside the spawn, right of the gate lane. */
+export const SHOP_TRUCK = { x: 16, z: 44, rotY: -0.5 };
+export const SHOP_TRIGGER = { x: 16, z: 44, hx: 4.5, hz: 4.5 };
 export const HUB_BOUNDS = { minX: -68, maxX: 68, minZ: 0, maxZ: 98 };
 export const DAILY_PAD = { x: -18, z: 62, r: 3.2 };
 export const STATS_BOARD = { x: 20, z: 64 };
@@ -61,6 +65,7 @@ export const HUB_SOLIDS: { x: number; z: number; r: number; kind: "metal" | "woo
   { x: -50, z: 54, r: 1.4, kind: "wood" },
   { x: -51, z: 50.5, r: 1.4, kind: "wood" },
   { x: 20, z: 64, r: 3.2, kind: "wood" },
+  { x: SHOP_TRUCK.x, z: SHOP_TRUCK.z, r: 2.2, kind: "metal" },
   { x: -18, z: 62 - 4.2, r: 0.6, kind: "metal" },
   { x: -56, z: 70, r: 0.5, kind: "tree" },
   { x: 56, z: 70, r: 0.5, kind: "tree" },

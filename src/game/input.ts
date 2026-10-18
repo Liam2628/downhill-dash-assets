@@ -9,6 +9,8 @@ const GAME_KEYS = new Set([
 
 export function bindInput() {
   const down = (e: KeyboardEvent) => {
+    // Ignore OS shortcuts like Mac Cmd+Shift+3/4 screenshots so they never boost.
+    if (e.metaKey) return;
     const t = e.target as HTMLElement | null;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
     keys.add(e.code);

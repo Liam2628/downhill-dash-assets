@@ -2,7 +2,10 @@ import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { Clone, useGLTF } from "@react-three/drei";
 import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { DAILY_PAD, GATE_HALF, HUB_BUILDINGS, STATS_BOARD, TEST_BOUNDS, TEST_TRACK, type HubBuilding } from "./hub";
+import { DAILY_PAD, GATE_HALF, HUB_BUILDINGS, SHOP_TRUCK, STATS_BOARD, TEST_BOUNDS, TEST_TRACK, type HubBuilding } from "./hub";
+import { TRIAL, TRIAL_WALL } from "./shop";
+import { trialCoins } from "./physics";
+import { useGame } from "./store";
 import { CarModel } from "./CarModel";
 import {
   boardTexture,
@@ -544,6 +547,8 @@ export function Hub() {
       ))}
       <Fence />
       <TestTrack />
+      <TrialProps />
+      <ShopTruck />
       <Gate />
       <Trees />
 
@@ -552,6 +557,139 @@ export function Hub() {
       <Suspense fallback={null}>
         <Props />
       </Suspense>
+    </group>
+  );
+}
+
+/** Blue premium-shop truck with a cart on the roof and a SHOP sign. */
+function ShopTruck() {
+  const shopTex = useMemo(() => signTexture("SHOP", { sub: "PREMIUM GEAR", bg: "#1554d1", border: "#ffffff", accent: "#ffcc1f" }), []);
+  const arrow = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (arrow.current) arrow.current.position.y = 8.6 + Math.sin(clock.elapsedTime * 3) * 0.3;
+  });
+  const blue = "#1e6ff2";
+  const dark = "#1550b8";
+  return (
+    <group position={[SHOP_TRUCK.x, 0, SHOP_TRUCK.z]} rotation-y={SHOP_TRUCK.rotY}>
+      {/* cargo box */}
+      <mesh position={[0, 2.1, -0.6]} castShadow>
+        <boxGeometry args={[3.2, 3, 5.2]} />
+        <meshStandardMaterial color={blue} roughness={0.35} metalness={0.25} />
+      </mesh>
+      {/* cab */}
+      <mesh position={[0, 1.5, 3.1]} castShadow>
+        <boxGeometry args={[2.9, 2, 1.9]} />
+        <meshStandardMaterial color={dark} roughness={0.3} metalness={0.3} />
+      </mesh>
+      <mesh position={[0, 2.1, 3.55]} castShadow>
+        <boxGeometry args={[2.7, 0.9, 1.1]} />
+        <meshStandardMaterial color="#bfe3ff" roughness={0.1} metalness={0.4} />
+      </mesh>
+      {/* wheels */}
+      {[[-1.5, 2.2], [1.5, 2.2], [-1.5, -1.8], [1.5, -1.8], [-1.4, 3.4], [1.4, 3.4]].map(([x, z], i) => (
+        <mesh key={i} position={[x, 0.62, z]} rotation-z={Math.PI / 2} castShadow>
+          <cylinderGeometry args={[0.62, 0.62, 0.45, 18]} />
+          <meshStandardMaterial color="#16181d" roughness={0.8} />
+        </mesh>
+      ))}
+      {/* stripe */}
+      <mesh position={[0, 1.4, -0.6]}>
+        <boxGeometry args={[3.24, 0.4, 5.24]} />
+        <meshStandardMaterial color="#ffcc1f" emissive="#7a5a00" />
+      </mesh>
+      {/* shopping cart on the roof */}
+      <group position={[0, 3.6, -0.6]}>
+        <mesh castShadow>
+          <boxGeometry args={[1.7, 0.9, 1.2]} />
+          <meshStandardMaterial color="#c8ccd4" metalness={0.7} roughness={0.3} wireframe />
+        </mesh>
+        <mesh position={[0, -0.5, 0]}>
+          <boxGeometry args={[1.5, 0.12, 1]} />
+          <meshStandardMaterial color="#9aa0aa" metalness={0.7} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.35, -0.85]} rotation-x={0.4}>
+          <boxGeometry args={[1.7, 0.12, 0.7]} />
+          <meshStandardMaterial color="#c8ccd4" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {[[-0.6, 0.45], [0.6, 0.45], [-0.6, -0.45], [0.6, -0.45]].map(([x, z], i) => (
+          <mesh key={i} position={[x, -0.75, z]} rotation-x={Math.PI / 2}>
+            <cylinderGeometry args={[0.16, 0.16, 0.1, 12]} />
+            <meshStandardMaterial color="#2a2c33" />
+          </mesh>
+        ))}
+      </group>
+      {/* SHOP sign above */}
+      <group ref={arrow}>
+        <mesh castShadow>
+          <boxGeometry args={[5.6, 2.4, 0.4]} />
+          <meshStandardMaterial color="#0f2c66" />
+        </mesh>
+        <mesh position={[0, 0, 0.22]}>
+          <planeGeometry args={[5.3, 2.1]} />
+          <meshBasicMaterial map={shopTex} toneMapped={false} />
+        </mesh>
+        <mesh position={[0, 0, -0.22]} rotation-y={Math.PI}>
+          <planeGeometry args={[5.3, 2.1]} />
+          <meshBasicMaterial map={shopTex} toneMapped={false} />
+        </mesh>
+      </group>
+      {/* glowing pad ring */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]}>
+        <ringGeometry args={[3.0, 3.4, 40]} />
+        <meshBasicMaterial color="#4da3ff" transparent opacity={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Trial props: magnet trial coins and the airbag crash wall. */
+function TrialProps() {
+  const trial = useGame((s) => s.trial);
+  const coins = useRef<THREE.InstancedMesh>(null);
+  useFrame(({ clock }) => {
+    if (!coins.current || trial !== "magnet") return;
+    const d = new THREE.Object3D();
+    let n = 0;
+    for (const c of trialCoins) {
+      if (c.taken) continue;
+      d.position.set(c.x, c.y + Math.sin(clock.elapsedTime * 3 + c.x) * 0.08, c.z);
+      d.rotation.set(0, clock.elapsedTime * 2, 0);
+      d.updateMatrix();
+      coins.current.setMatrixAt(n++, d.matrix);
+    }
+    coins.current.count = n;
+    coins.current.instanceMatrix.needsUpdate = true;
+  });
+  if (!trial) return null;
+  return (
+    <group>
+      {trial === "magnet" && (
+        <instancedMesh ref={coins} args={[undefined, undefined, 32]} key={String(trial)}>
+          <cylinderGeometry args={[0.55, 0.55, 0.14, 20]} />
+          <meshStandardMaterial color="#ffcc1f" metalness={0.7} roughness={0.25} emissive="#4a3600" />
+        </instancedMesh>
+      )}
+      {trial === "airbag" && (
+        <group position={[TRIAL_WALL.x, 0, TRIAL_WALL.z]}>
+          <mesh position={[0, TRIAL_WALL.h / 2, 0]} castShadow>
+            <boxGeometry args={[TRIAL_WALL.w, TRIAL_WALL.h, 1.2]} />
+            <meshStandardMaterial color="#d8321f" roughness={0.7} />
+          </mesh>
+          {[-1, 1].map((sd) => (
+            <mesh key={sd} position={[sd * (TRIAL_WALL.w / 2 - 1), TRIAL_WALL.h / 2, 0.62]}>
+              <planeGeometry args={[1.2, TRIAL_WALL.h - 0.4]} />
+              <meshBasicMaterial color="#f4f4f4" />
+            </mesh>
+          ))}
+          <Sign text="CRASH WALL" sub="AIRBAG TEST" w={8} h={2} bg="#d8321f" border="#ffffff" position={[0, TRIAL_WALL.h + 1.6, 0]} />
+        </group>
+      )}
+      {/* trial pad ring */}
+      <mesh rotation-x={-Math.PI / 2} position={[TRIAL.x, 0.04, TRIAL.z]}>
+        <ringGeometry args={[15.5, 16, 48]} />
+        <meshBasicMaterial color="#ff2bd6" transparent opacity={0.5} />
+      </mesh>
     </group>
   );
 }

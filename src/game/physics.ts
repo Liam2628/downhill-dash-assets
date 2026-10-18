@@ -27,7 +27,8 @@ import {
   solidY,
   type Loop,
 } from "./track";
-import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, TEST_BOUNDS, TEST_TRACK, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
+import { DAILY_PAD, GATE_HALF, HUB_BOUNDS, SHOP_TRIGGER, TEST_BOUNDS, TEST_TRACK, HUB_BUILDINGS, HUB_CONES, HUB_SOLIDS, SPAWN } from "./hub";
+import { TRIAL, TRIAL_WALL, trialCoins as makeTrialCoins } from "./shop";
 import { k, doubleTap, keys } from "./input";
 import { TrickTracker } from "./tricks";
 import { QUESTS, SPLITS, loadSplitPB, questProgress, questsNewRun, saveSplitPB } from "./quests";
@@ -136,6 +137,7 @@ export function resetRun() {
   }
   runState.version++;
   runBackflips = 0;
+  airbagUsed = false;
   questsNewRun();
   splitPB = loadSplitPB();
   splitNow = [];
@@ -217,13 +219,78 @@ export function endTestDrive() {
   const g = useGame.getState();
   const id = g.testCar;
   if (!id) return;
+  const trial = g.trial;
   g.setTestCar(null);
-  const b = HUB_BUILDINGS.find((h) => h.id === "dealer")!;
+  g.setTrial(null);
+  trialCoins.length = 0;
+  airbagUsed = false;
   P.speed = 0;
+  if (trial) {
+    teleport(SHOP_TRIGGER.x, SHOP_TRIGGER.z + 6, Math.PI);
+    P.snapCam = true;
+    g.openMenu("shop");
+    return;
+  }
+  const b = HUB_BUILDINGS.find((h) => h.id === "dealer")!;
   teleport(b.trigger.x, b.trigger.z, b.exit.yaw + Math.PI);
   P.snapCam = true;
   g.openMenu("dealer");
   g.setPreview(id);
+}
+
+// --- Premium item trials (isolated, never grant ownership or real coins) ---
+export type TrialCoin = { x: number; y: number; z: number; taken: number; pull: number };
+export const trialCoins: TrialCoin[] = [];
+let airbagUsed = false;
+export const airbagState = { get used() { return airbagUsed; } };
+
+export function startTrial(item: "magnet" | "airbag") {
+  const g = useGame.getState();
+  g.closeMenu();
+  g.setTestCar(useSave.getState().selected);
+  g.setTrial(item);
+  trialCoins.length = 0;
+  if (item === "magnet") {
+    for (const c of makeTrialCoins()) trialCoins.push({ x: c.x, y: 0.9, z: c.z, taken: 0, pull: 0 });
+    teleport(TRIAL.x, TRIAL.z, Math.PI / 2);
+    g.popup("MAGNET TRIAL", "cool", "Coins zip to you · trial coins are worth nothing");
+  } else {
+    airbagUsed = false;
+    teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
+    g.popup("AIRBAG TRIAL", "cool", "Drive into the crash wall ahead!");
+  }
+  P.speed = 0;
+  P.boostT = 0;
+  P.cooldownT = 0;
+  P.snapCam = true;
+}
+
+/** Airbag rescue: one save per run/trial, lands the car on verified clear road. */
+function deployAirbag() {
+  airbagUsed = true;
+  audio.play("pad");
+  audio.play("coin");
+  const g = useGame.getState();
+  if (g.trial === "airbag") {
+    teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
+    g.popup("AIRBAG DEPLOYED!", "cool", "Saved from the crash · one use per run");
+  } else {
+    const s = Math.max(0, -P.z);
+    const rs = s + 5;
+    P.x = cAt(rs); P.z = -rs; P.y = hAt(rs) + 0.2;
+    P.yaw = roadYaw(rs); P.speed = 0; P.vy = 0; P.lateral = 0;
+    P.pitch = 0; P.roll = 0; P.grounded = true; P.loop = null; P.snapCam = true;
+    g.popup("AIRBAG DEPLOYED!", "cool", "Back on clear road · one use per run");
+  }
+  P.wipe = 0;
+  P.wipeSpin = 0;
+  resetAir();
+}
+
+/** True when the premium airbag is available this run (owned, or on trial). */
+function airbagArmed() {
+  const g = useGame.getState();
+  return g.trial === "airbag" && !airbagUsed;
 }
 
 export function exitMenu() {
@@ -277,6 +344,10 @@ function award(n: number) {
 }
 
 function wipeout(reason: string, kind: CrashKind, intensity: number) {
+  if (airbagArmed()) {
+    deployAirbag();
+    return;
+  }
   P.wipe = 1.4;
   P.combo = 1;
   P.comboT = 0;
@@ -371,28 +442,9 @@ let fpsFrames = 0;
 let fps = 0;
 let dailyArmed = true;
 
-/** car footprint sample points (relative to center): front corners, front, rear corners */
-const FOOT: [number, number][] = [
-  [2.0, 0],
-  [1.9, 0.85],
-  [1.9, -0.85],
-  [-1.9, 0.85],
-  [-1.9, -0.85],
-];
-
-function footprintBlocked(x: number, z: number, yaw: number, y: number) {
-  for (const [f, r] of FOOT) {
-    const px = x + Math.sin(yaw) * f + Math.cos(yaw) * r;
-    const pz = z + Math.cos(yaw) * f - Math.sin(yaw) * r;
-    for (const lp of LOOPS) {
-      const base = hAt(lp.s);
-      if (y > base + lp.R * 2 + 1 || y + 1.4 < base - 1) continue;
-      if (Math.abs(pz + lp.s) < 0.4 && Math.abs(Math.abs(px - cAt(lp.s)) - 9) < 0.4) return "pillar";
-      if (Math.abs(pz + lp.s) < 0.4 && Math.abs(px - cAt(lp.s)) < 9.5 &&
-          y + 1.4 > base + lp.R * 2 + 1.4 && y < base + lp.R * 2 + 2.2) return "pillar";
-    }
-  }
-  return null;
+/** Loop support pillars were removed; nothing else blocks the footprint, so this stays false. */
+function footprintBlocked(_x: number, _z: number, _yaw: number, _y: number) {
+  return null as string | null;
 }
 
 // Bounded substeps keep narrow decks, barrier noses and supports from being skipped.
@@ -647,6 +699,15 @@ function stepPhysics(rawDt: number) {
       nx = Math.max(B.minX, Math.min(B.maxX, nx));
       nz = Math.max(B.minZ, Math.min(B.maxZ, nz));
     }
+    // Airbag trial crash wall: solid, and hitting it triggers the rescue.
+    if (game.trial === "airbag") {
+      const w = TRIAL_WALL;
+      if (Math.abs(nx - w.x) < w.w / 2 + 1 && nz < w.z + 1.2 && nz > w.z - 1.2) {
+        nz = w.z + 1.2;
+        if (airbagArmed() && Math.abs(P.speed) > 8) deployAirbag();
+        else impact("concrete", Math.abs(P.speed), "Hit the crash wall");
+      }
+    }
   } else if (nz > 0) {
     // ---- HUB ----
     if (nx < HUB_BOUNDS.minX || nx > HUB_BOUNDS.maxX || nz > HUB_BOUNDS.maxZ) {
@@ -805,6 +866,7 @@ function stepPhysics(rawDt: number) {
   }
 
   stepCones(dt);
+  stepTrial(dt);
   const ns = -P.z;
   // Stuck at a loop for 3s+: put the car back on clear road before it.
   const nearLoop = LOOPS.find((l) => Math.abs(ns - l.s) < 30);
@@ -825,6 +887,32 @@ function stepPhysics(rawDt: number) {
 }
 
 let loopStuckT = 0;
+
+/** Magnet trial: coins visibly accelerate toward the car and pop on contact. */
+function stepTrial(dt: number) {
+  const g = useGame.getState();
+  if (g.trial !== "magnet" || !g.testCar) return;
+  const R = 20;
+  for (const c of trialCoins) {
+    if (c.taken) continue;
+    const dx = P.x - c.x;
+    const dz = P.z - c.z;
+    const d = Math.hypot(dx, dz);
+    if (d < R) {
+      c.pull = Math.min(1, c.pull + dt * 1.6);
+      const v = 6 + c.pull * 26;
+      c.x += (dx / (d || 1)) * v * dt;
+      c.z += (dz / (d || 1)) * v * dt;
+      c.y += ((P.y + 0.9) - c.y) * (1 - Math.exp(-8 * dt));
+      if (d < 1.6) {
+        c.taken = 1;
+        audio.play("coin");
+        g.popup("MAGNET!", "cool", "Trial coin — worth 0 wheels");
+      }
+    }
+  }
+}
+
 function stepCones(dt: number) {
   const cones = runState.cones;
   const vx = Math.sin(P.yaw) * P.speed;
@@ -974,6 +1062,16 @@ function events(ns: number, mode: string, stats: ReturnType<typeof currentStats>
       }
       if (dx < t.hx + 12 && dz < t.hz + 12) hint = `Drive in to enter the ${b.label}`;
     }
+    // Blue shop truck opens the premium shop.
+    const sd = Math.hypot(P.x - SHOP_TRIGGER.x, P.z - SHOP_TRIGGER.z);
+    if (sd < 3.4) {
+      audio.play("ui");
+      P.speed = 0;
+      P.snapCam = false;
+      game.openMenu("shop");
+      return;
+    }
+    if (sd < 16) hint = "Drive up to the blue truck to open the SHOP";
     const dp = Math.hypot(P.x - DAILY_PAD.x, P.z - DAILY_PAD.z);
     const claimed = useSave.getState().lastDaily === todayKey();
     if (dp < DAILY_PAD.r) {
