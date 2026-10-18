@@ -299,17 +299,6 @@ function Loops() {
               <meshStandardMaterial color={j ? "#ff3b6b" : "#22c7ff"} emissive={j ? "#7a0020" : "#004a66"} roughness={0.3} />
             </mesh>
           ))}
-          {/* support pillars */}
-          {[-1, 1].map((sd) => (
-            <mesh key={sd} position={[d.c + sd * 9, d.h + d.lp.R, -d.lp.s]} castShadow>
-              <boxGeometry args={[0.8, d.lp.R * 2 + 2, 0.8]} />
-              <meshStandardMaterial map={stoneTexture()} roughness={0.9} />
-            </mesh>
-          ))}
-          <mesh position={[d.c, d.h + d.lp.R * 2 + 1.8, -d.lp.s]} castShadow>
-            <boxGeometry args={[19, 0.8, 0.8]} />
-            <meshStandardMaterial map={stoneTexture()} roughness={0.9} />
-          </mesh>
         </group>
       ))}
     </>
