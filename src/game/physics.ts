@@ -1062,6 +1062,16 @@ function events(ns: number, mode: string, stats: ReturnType<typeof currentStats>
       }
       if (dx < t.hx + 12 && dz < t.hz + 12) hint = `Drive in to enter the ${b.label}`;
     }
+    // Blue shop truck opens the premium shop.
+    const sd = Math.hypot(P.x - SHOP_TRIGGER.x, P.z - SHOP_TRIGGER.z);
+    if (sd < 3.4) {
+      audio.play("ui");
+      P.speed = 0;
+      P.snapCam = false;
+      game.openMenu("shop");
+      return;
+    }
+    if (sd < 16) hint = "Drive up to the blue truck to open the SHOP";
     const dp = Math.hypot(P.x - DAILY_PAD.x, P.z - DAILY_PAD.z);
     const claimed = useSave.getState().lastDaily === todayKey();
     if (dp < DAILY_PAD.r) {
