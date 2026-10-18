@@ -137,6 +137,7 @@ export function resetRun() {
   }
   runState.version++;
   runBackflips = 0;
+  airbagUsed = false;
   questsNewRun();
   splitPB = loadSplitPB();
   splitNow = [];
@@ -343,6 +344,10 @@ function award(n: number) {
 }
 
 function wipeout(reason: string, kind: CrashKind, intensity: number) {
+  if (airbagArmed()) {
+    deployAirbag();
+    return;
+  }
   P.wipe = 1.4;
   P.combo = 1;
   P.comboT = 0;
