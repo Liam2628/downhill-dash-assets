@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Refine Mercedes Vision AVTR bionic flaps to match the real concept
 - [ ] Premium shop: distinct blue truck at reference location, dedicated shop/cart link, three item pictures and rotatable models
 - [ ] Improve vehicle practice area; add isolated item trials, magnet and once-per-run safe airbag effect; remove loop pillars; fix Mac screenshot boost
 - [ ] Payments: enable built-in Stripe if available, secure entitlements and subscription lifecycle; otherwise document blocker without fake purchases
