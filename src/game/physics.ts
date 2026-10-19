@@ -193,6 +193,7 @@ let finishMilestonePassed = false;
 
 export function returnToLobby() {
   useGame.getState().setMilestone(null);
+  clearTrial();
   useGame.getState().setTestCar(null);
   teleport(SPAWN.x, SPAWN.z, SPAWN.yaw);
   P.boostT = 0;
@@ -221,9 +222,7 @@ export function endTestDrive() {
   if (!id) return;
   const trial = g.trial;
   g.setTestCar(null);
-  g.setTrial(null);
-  trialCoins.length = 0;
-  airbagUsed = false;
+  clearTrial();
   P.speed = 0;
   if (trial) {
     teleport(SHOP_TRIGGER.x, SHOP_TRIGGER.z + 6, Math.PI);
@@ -243,19 +242,27 @@ export type TrialCoin = { x: number; y: number; z: number; taken: number; pull: 
 export const trialCoins: TrialCoin[] = [];
 let airbagUsed = false;
 export const airbagState = { get used() { return airbagUsed; } };
+function clearTrial() {
+  useGame.getState().setTrial(null);
+  trialCoins.length = 0;
+  airbagUsed = false;
+}
 
-export function startTrial(item: "magnet" | "airbag") {
+export function startTrial(item: "magnet" | "airbag" | "noads") {
   const g = useGame.getState();
   g.closeMenu();
   g.setTestCar(useSave.getState().selected);
   g.setTrial(item);
   trialCoins.length = 0;
+  airbagUsed = false;
   if (item === "magnet") {
     for (const c of makeTrialCoins()) trialCoins.push({ x: c.x, y: 0.9, z: c.z, taken: 0, pull: 0 });
     teleport(TRIAL.x, TRIAL.z, Math.PI / 2);
     g.popup("MAGNET TRIAL", "cool", "Coins zip to you · trial coins are worth nothing");
+  } else if (item === "noads") {
+    teleport(TEST_TRACK.x, TEST_TRACK.z - TEST_TRACK.rz, Math.PI / 2);
+    g.popup("AD-FREE PREVIEW", "cool", "No ads exist yet · nothing was purchased");
   } else {
-    airbagUsed = false;
     teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
     g.popup("AIRBAG TRIAL", "cool", "Drive into the crash wall ahead!");
   }
@@ -271,6 +278,8 @@ function deployAirbag() {
   audio.play("pad");
   audio.play("coin");
   const g = useGame.getState();
+  airbagFx.t = 1;
+  airbagFx.x = P.x; airbagFx.y = P.y; airbagFx.z = P.z;
   if (g.trial === "airbag") {
     teleport(TRIAL.x, TRIAL.z + 14, Math.PI);
     g.popup("AIRBAG DEPLOYED!", "cool", "Saved from the crash · one use per run");
@@ -288,9 +297,10 @@ function deployAirbag() {
 }
 
 /** True when the premium airbag is available this run (owned, or on trial). */
-function airbagArmed() {
+export const airbagFx = { t: 0, x: 0, y: 0, z: 0 };
+export function airbagArmed() {
   const g = useGame.getState();
-  return g.trial === "airbag" && !airbagUsed;
+  return !!g.testCar && g.trial === "airbag" && !airbagUsed;
 }
 
 export function exitMenu() {
