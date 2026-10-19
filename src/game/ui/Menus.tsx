@@ -5,6 +5,7 @@ import { CARS, EQUIPMENT, GLOWS, GLOW_UNLOCK, PAINTS, TRAIL_UNLOCK, UPGRADES, ca
 import { audio } from "../audio";
 import { exitMenu, startTestDrive } from "../physics";
 import { WheelIcon } from "./WheelIcon";
+import { Shop } from "./Shop";
 
 function Price({ n }: { n: number }) {
   return (
@@ -337,6 +338,7 @@ function Tuning() {
 
 export function MenuPanel() {
   const menu = useGame((s) => s.menu);
+  if (menu === "shop") return <Shop />;
   if (menu === "garage") return <Garage />;
   if (menu === "dealer") return <Dealer />;
   if (menu === "tuning") return <Tuning />;

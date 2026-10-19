@@ -51,7 +51,11 @@ export const PREMIUMS: Premium[] = [
   },
 ];
 
-export const premiumById = (id: PremiumId) => PREMIUMS.find((p) => p.id === id)!;
+export const premiumById = (id: PremiumId) => {
+  const item = PREMIUMS.find((p) => p.id === id);
+  if (!item) throw new Error(`Unknown premium item: ${id}`);
+  return item;
+};
 
 export const priceText = (p: Premium) =>
   `$${(p.cents / 100).toFixed(2)}${p.kind === "subscription" ? "/mo" : ""}`;
