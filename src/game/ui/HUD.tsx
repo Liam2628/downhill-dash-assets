@@ -13,6 +13,8 @@ import type { Action } from "../store";
 import { DailyChest } from "./DailyChest";
 import tireLogo from "@/assets/tire-logo.png";
 import { LOOPS, dcAt } from "../track";
+import { TrialBar } from "./Shop";
+import { Button } from "@/components/ui/button";
 
 function fmtTime(t: number) {
   const m = Math.floor(t / 60);
@@ -70,16 +72,16 @@ function TopBar() {
         {showFps && <div className="hud-chip px-2 py-1 font-mono text-xs">{fps} FPS</div>}
       </div>
       <div className="pointer-events-auto flex gap-2">
-        <button
+        <Button variant="ghost"
           aria-label="Shop"
           className="hud-chip p-2.5"
           onClick={() => {
             audio.play("ui");
-            useGame.getState().openMenu("tuning");
+            useGame.getState().openMenu("shop");
           }}
         >
           <ShoppingCart className="h-5 w-5" />
-        </button>
+        </Button>
         <button
           aria-label={muted ? "Unmute" : "Mute"}
           className="hud-chip p-2.5"
@@ -507,6 +509,7 @@ export function HUD() {
         </div>
       )}
       <AccountPrompt />
+      <TrialBar />
       {settingsOpen && (
         <div className="pointer-events-auto">
           <SettingsModal />
